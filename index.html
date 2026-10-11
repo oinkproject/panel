@@ -3,52 +3,82 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IJS Joki - Panel Management</title>
+  <title>IJS Joki - Executive Control Panel</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased pb-12">
 
   <div class="max-w-7xl mx-auto p-4 md:p-8">
     <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-slate-800 pb-6">
       <div>
-        <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">🚀 Panel Penjualan IJS Joki</h1>
-        <p class="text-slate-400 text-sm mt-1">Kelola pesanan, deadline, dan pendapatan bulanan.</p>
+        <div class="flex items-center gap-2">
+          <span class="bg-indigo-500/20 text-indigo-400 text-xs font-bold px-2.5 py-1 rounded-md border border-indigo-500/30">PRO PANEL</span>
+          <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">IJS Joki Management</h1>
+        </div>
+        <p class="text-slate-400 text-sm mt-1">Overview performa bisnis, tracking leads, orderan, dan kontak customer.</p>
       </div>
       <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-5 py-2.5 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2">
-        <i class="fa-solid fa-plus"></i> Tambah Order Baru
+        <i class="fa-solid fa-plus"></i> Input Customer / Order
       </button>
     </div>
 
-    <!-- Stat Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-      <div class="bg-slate-800/80 border border-slate-700/60 p-6 rounded-2xl shadow-xl backdrop-blur-sm">
+    <!-- Analytics Dashboard Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+      
+      <!-- Card Omset -->
+      <div class="col-span-2 bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
         <div class="flex items-center justify-between">
-          <span class="text-slate-400 text-sm font-medium">Total Order Bulan Ini</span>
-          <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-            <i class="fa-solid fa-cart-shopping"></i>
+          <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Omset Bulan Ini</span>
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+            <i class="fa-solid fa-wallet text-sm"></i>
           </div>
         </div>
-        <p id="total-orders" class="text-3xl md:text-4xl font-black text-white mt-3">0</p>
+        <p id="total-revenue" class="text-2xl md:text-3xl font-black text-emerald-400 mt-2">Rp 0</p>
       </div>
 
-      <div class="bg-slate-800/80 border border-slate-700/60 p-6 rounded-2xl shadow-xl backdrop-blur-sm">
-        <div class="flex items-center justify-between">
-          <span class="text-slate-400 text-sm font-medium">Omset Bulan Ini</span>
-          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-            <i class="fa-solid fa-wallet"></i>
-          </div>
-        </div>
-        <p id="total-revenue" class="text-3xl md:text-4xl font-black text-emerald-400 mt-3">Rp 0</p>
+      <!-- Card Total Order Bulan Ini -->
+      <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
+        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Order Bulan Ini</span>
+        <p id="month-orders" class="text-2xl font-black text-white mt-2">0</p>
       </div>
+
+      <!-- Card Total Customer -->
+      <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
+        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total Leads/Cust</span>
+        <p id="total-cust" class="text-2xl font-black text-blue-400 mt-2">0</p>
+      </div>
+
+      <!-- Card Total Buy vs Ask -->
+      <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
+        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Buy / Ask</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span id="total-buy" class="text-2xl font-black text-indigo-400">0</span>
+          <span class="text-slate-500 font-bold">/</span>
+          <span id="total-ask" class="text-2xl font-black text-slate-400">0</span>
+        </div>
+      </div>
+
+      <!-- Card Pending vs Selesai -->
+      <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
+        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Pending / Done</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span id="total-pending" class="text-2xl font-black text-amber-400">0</span>
+          <span class="text-slate-500 font-bold">/</span>
+          <span id="total-done" class="text-2xl font-black text-emerald-400">0</span>
+        </div>
+      </div>
+
     </div>
 
     <!-- Table Orders -->
     <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl shadow-xl overflow-hidden">
       <div class="p-5 border-b border-slate-700/60 flex items-center justify-between">
-        <h2 class="font-bold text-slate-200 text-lg">Daftar Orderan</h2>
-        <button onclick="loadData()" class="text-slate-400 hover:text-white transition">
+        <h2 class="font-bold text-slate-200 text-lg flex items-center gap-2">
+          <i class="fa-solid fa-list-check text-indigo-400"></i> Daftar Transaksi & Leads
+        </h2>
+        <button onclick="loadData()" class="text-slate-400 hover:text-white transition bg-slate-700/50 p-2 rounded-lg">
           <i class="fa-solid fa-rotate-right"></i>
         </button>
       </div>
@@ -56,17 +86,19 @@
         <table class="w-full text-left border-collapse text-sm">
           <thead>
             <tr class="bg-slate-900/50 text-slate-400 border-b border-slate-700/60">
-              <th class="p-4">Nama Client</th>
+              <th class="p-4">Customer</th>
+              <th class="p-4">No. WhatsApp</th>
               <th class="p-4">Item Jasa</th>
               <th class="p-4">Harga</th>
-              <th class="p-4">Tanggal Order</th>
               <th class="p-4">Deadline</th>
+              <th class="p-4">Type</th>
               <th class="p-4">Status</th>
+              <th class="p-4 text-center">Aksi</th>
             </tr>
           </thead>
           <tbody id="order-rows" class="divide-y divide-slate-700/40 text-slate-300">
             <tr>
-              <td colspan="6" class="p-6 text-center text-slate-500">Memuat data...</td>
+              <td colspan="8" class="p-6 text-center text-slate-500">Memuat data...</td>
             </tr>
           </tbody>
         </table>
@@ -81,20 +113,25 @@
         <i class="fa-solid fa-xmark text-xl"></i>
       </button>
       
-      <h3 class="text-xl font-bold text-white mb-4">Input Orderan Baru</h3>
+      <h3 class="text-xl font-bold text-white mb-4">Input Order / Prospect Baru</h3>
       
       <form id="orderForm" onsubmit="submitForm(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-semibold text-slate-400 mb-1">TIPE ENQUIRY</label>
           <select id="type" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
-            <option value="Buy">Buy (Order)</option>
-            <option value="Ask">Ask (Tanya-tanya)</option>
+            <option value="Buy">Buy (Order Langsung)</option>
+            <option value="Ask">Ask (Tanya-tanya / Lead)</option>
           </select>
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-400 mb-1">NAMA CLIENT</label>
           <input type="text" id="clientName" required placeholder="Contoh: Kiera" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1">NOMOR WHATSAPP</label>
+          <input type="text" id="phone" required placeholder="Contoh: 081234567890" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
         </div>
 
         <div>
@@ -109,7 +146,7 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">TANGGAL ORDER</label>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">TANGGAL CHAT/ORDER</label>
             <input type="date" id="orderDate" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 [color-scheme:dark]">
           </div>
           <div>
@@ -118,8 +155,8 @@
           </div>
         </div>
 
-        <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold p-3 rounded-xl mt-2 transition">
-          Simpan Order & Copy Rename WA
+        <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold p-3 rounded-xl mt-2 transition shadow-lg">
+          Simpan Data & Copy Rename WA
         </button>
       </form>
     </div>
@@ -128,7 +165,6 @@
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxJ0qOZNoYGq99cRSnrhvki8OHxLwNhgQvIWhU1TwzSLpTx3xWjC8YcuYtsjTjtLg4/exec";
 
-    // Set default tanggal hari ini pada Date Picker
     document.getElementById('orderDate').valueAsDate = new Date();
 
     function openModal() {
@@ -147,49 +183,90 @@
         const result = await res.json();
         
         if (result.status === "success") {
-          const orders = result.data;
+          const orders = result.data || [];
           const currentMonth = new Date().getMonth();
           const currentYear = new Date().getFullYear();
           
           let monthCount = 0;
           let monthRevenue = 0;
-          
+          let buyCount = 0;
+          let askCount = 0;
+          let pendingCount = 0;
+          let doneCount = 0;
+
           const tbody = document.getElementById('order-rows');
           tbody.innerHTML = '';
 
-          if (!orders || orders.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">Belum ada data order.</td></tr>`;
+          if (orders.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-500">Belum ada data transaksi.</td></tr>`;
             return;
           }
 
           orders.reverse().forEach(ord => {
             const ordDate = new Date(ord.orderDate);
+            
             if (ordDate.getMonth() === currentMonth && ordDate.getFullYear() === currentYear) {
               monthCount++;
-              monthRevenue += Number(ord.price || 0);
+              if(ord.type === "Buy") monthRevenue += Number(ord.price || 0);
             }
+
+            if (ord.type === "Buy") buyCount++;
+            if (ord.type === "Ask") askCount++;
+            if (ord.status === "Pending") pendingCount++;
+            if (ord.status === "Selesai") doneCount++;
+
+            const statusClass = ord.status === "Selesai" 
+              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
+              : "bg-amber-500/10 text-amber-400 border-amber-500/20";
 
             tbody.innerHTML += `
               <tr class="hover:bg-slate-700/20 transition border-b border-slate-700/40">
                 <td class="p-4 font-semibold text-white">${ord.name}</td>
+                <td class="p-4 text-slate-400 font-mono text-xs">
+                  ${ord.phone} 
+                  ${ord.phone !== '-' ? `<a href="https://wa.me/${ord.phone}" target="_blank" class="text-emerald-400 hover:text-emerald-300 ml-1.5"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
+                </td>
                 <td class="p-4">${ord.item}</td>
                 <td class="p-4 text-emerald-400 font-medium">Rp ${Number(ord.price).toLocaleString('id-ID')}</td>
-                <td class="p-4 text-slate-400">${ord.orderDate}</td>
                 <td class="p-4 text-amber-400 font-medium">${ord.deadline}</td>
+                <td class="p-4"><span class="text-xs px-2 py-0.5 rounded ${ord.type === 'Buy' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-700 text-slate-300'}">${ord.type}</span></td>
                 <td class="p-4">
-                  <span class="bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-lg text-xs border border-amber-500/20 font-medium">
+                  <span class="px-2.5 py-1 rounded-lg text-xs border font-medium ${statusClass}">
                     ${ord.status}
                   </span>
+                </td>
+                <td class="p-4 text-center">
+                  <button onclick="toggleStatus('${ord.id}', '${ord.status}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg transition">
+                    ${ord.status === 'Pending' ? 'Tandai Selesai' : 'Set Pending'}
+                  </button>
                 </td>
               </tr>
             `;
           });
 
-          document.getElementById('total-orders').innerText = monthCount;
           document.getElementById('total-revenue').innerText = `Rp ${monthRevenue.toLocaleString('id-ID')}`;
+          document.getElementById('month-orders').innerText = monthCount;
+          document.getElementById('total-cust').innerText = orders.length;
+          document.getElementById('total-buy').innerText = buyCount;
+          document.getElementById('total-ask').innerText = askCount;
+          document.getElementById('total-pending').innerText = pendingCount;
+          document.getElementById('total-done').innerText = doneCount;
         }
       } catch (err) {
         console.error(err);
+      }
+    }
+
+    async function toggleStatus(orderId, currentStatus) {
+      const newStatus = currentStatus === "Pending" ? "Selesai" : "Pending";
+      try {
+        await fetch(GAS_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "update_status", orderId: orderId, newStatus: newStatus })
+        });
+        loadData();
+      } catch (err) {
+        alert("Gagal mengubah status.");
       }
     }
 
@@ -201,6 +278,7 @@
 
       const type = document.getElementById('type').value;
       const name = document.getElementById('clientName').value;
+      const phone = document.getElementById('phone').value;
       const item = document.getElementById('item').value;
       const price = document.getElementById('price').value;
       const orderDateVal = document.getElementById('orderDate').value;
@@ -210,6 +288,7 @@
         action: "add_order",
         type: type,
         name: name,
+        phone: phone,
         item: item,
         price: price,
         orderDate: orderDateVal,
@@ -224,9 +303,8 @@
         const result = await res.json();
 
         if (result.status === "success") {
-          // Copy saran name ke clipboard
           await navigator.clipboard.writeText(result.suggestedName);
-          alert(`✅ Order Berhasil Disimpan!\n\nSaran Nama Kontak WA:\n${result.suggestedName}\n\n(Telah tersalin otomatis ke clipboard!)`);
+          alert(`✅ Data Berhasil Disimpan!\n\nSaran Nama Kontak WA:\n${result.suggestedName}\n\n(Telah tersalin otomatis ke clipboard!)`);
           
           closeModal();
           document.getElementById('orderForm').reset();
@@ -236,7 +314,7 @@
       } catch (err) {
         alert("Gagal menyimpan data.");
       } finally {
-        btn.innerText = "Simpan Order & Copy Rename WA";
+        btn.innerText = "Simpan Data & Copy Rename WA";
         btn.disabled = false;
       }
     }
