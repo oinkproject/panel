@@ -70,9 +70,10 @@ a{color:inherit}
 .bar{height:6px;border-radius:99px;background:var(--surface2);overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--money);border-radius:99px;transition:width .3s}
 .hero-sub{font-size:13px;color:var(--muted);margin:8px 0 14px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:600px){ .stats{grid-template-columns:repeat(2,1fr);} }
 .stat{background:var(--surface2);border-radius:10px;padding:10px 12px}
-.stat b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.stat b{display:block;font-size:16px;font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--muted)}
 
 /* Daftar order */
@@ -91,6 +92,7 @@ a{color:inherit}
 .due{font-size:13px;color:var(--muted)}
 .due.late{color:var(--danger);font-weight:650}
 .due.soon{color:var(--warn);font-weight:650}
+.o-date-info{font-size:12px;color:var(--muted);display:flex;gap:12px;margin-top:-2px}
 .o-actions{display:flex;flex-wrap:wrap;gap:6px;padding-top:4px}
 .empty{color:var(--muted);text-align:center;padding:28px 12px;margin:0}
 
@@ -184,9 +186,10 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
     <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
     <div class="hero-sub" id="heroSub"></div>
     <div class="stats">
-      <div class="stat"><b id="stOrders">0</b><span>Order bulan ini</span></div>
-      <div class="stat"><b id="stPending">0</b><span>Pekerjaan pending</span></div>
-      <div class="stat"><b id="stDue">Rp 0</b><span>Sisa tagihan</span></div>
+      <div class="stat"><b id="stWeekly">Rp 0</b><span>Minggu Ini</span></div>
+      <div class="stat"><b id="stOrders">0</b><span>Order Bulan Ini</span></div>
+      <div class="stat"><b id="stPending">0</b><span>Pekerjaan Pending</span></div>
+      <div class="stat"><b id="stDue">Rp 0</b><span>Sisa Tagihan</span></div>
     </div>
   </section>
 
@@ -232,12 +235,12 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
     <input type="hidden" id="editId">
     
     <label class="field">
-      <span>Nama client (Pilih / Tulis Baru)</span>
-      <input id="fName" class="input" required list="customerList" placeholder="Ketik nama atau pilih customer lama..." autocomplete="off">
-      <datalist id="customerList"></datalist>
+      <span>Nomor WhatsApp (Pilih / Tulis Baru)</span>
+      <input id="fPhone" class="input" required inputmode="tel" list="phoneList" placeholder="Ketik nomor WhatsApp..." autocomplete="off">
+      <datalist id="phoneList"></datalist>
     </label>
 
-    <label class="field"><span>Nomor WhatsApp</span><input id="fPhone" class="input" required inputmode="tel" placeholder="081234567890"></label>
+    <label class="field"><span>Nama client</span><input id="fName" class="input" required placeholder="Contoh: Kiera"></label>
     <label class="field"><span>Item / jasa</span><input id="fItem" class="input" required placeholder="Contoh: Logo"></label>
     <div class="field"><span>Pembayaran</span></div>
     <div class="seg" style="margin-top:-8px">
@@ -246,7 +249,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
     </div>
     <div class="row2">
       <label class="field"><span>Harga penuh (Rp)</span><input id="fPrice" class="input" type="number" min="0" required inputmode="numeric" placeholder="150000"></label>
-      <label class="field hidden" id="dpField"><span>DP masuk (Rp)</span><input id="fDp" class="input" type="number" min="0" inputmode="numeric" placeholder="50000"></label>
+      <label class="field hidden" id="dpField"><span>DP masuk (Rp)</span><input id="fDp" class="input" type="number" min="0" inputmode="numeric" placeholder="0"></label>
     </div>
     <div class="row2">
       <label class="field"><span>Tanggal order</span><input id="fOrderDate" class="input" type="date" required></label>
@@ -296,6 +299,7 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbxJ0qOZNoYGq99cRSnrhvki
 /* ---------- Util ---------- */
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2, '0');
+const DAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 const MONTHS = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 const MON = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -303,9 +307,18 @@ const rp = n => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const today = () => ymd(new Date());
 const parts = s => String(s || '').split('-').map(Number);
+
+function fmtDayDate(s) {
+  if (!s) return '-';
+  const [y, m, d] = parts(s);
+  const dt = new Date(y, m - 1, d);
+  return `${DAYS[dt.getDay()]}, ${d} ${MON[m - 1]} ${y}`;
+}
+
 const fmtD = s => { if (!s) return '-'; const [y, m, d] = parts(s); return `${d} ${MON[m - 1]} ${y}`; };
 const fmtLong = s => { const [y, m, d] = parts(s); return `${d} ${MONTHS[m - 1]} ${y}`; };
 const dayDiff = (a, b) => { const x = parts(a), y = parts(b); return Math.round((Date.UTC(y[0], y[1] - 1, y[2]) - Date.UTC(x[0], x[1] - 1, x[2])) / 864e5); };
+
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
@@ -351,7 +364,7 @@ const paidOf = o => {
   const price = Number(o.price) || 0;
   if (isLunas(o)) return price;
   const dp = Number(o.dpAmount) || 0;
-  return dp > 0 ? Math.min(dp, price) : 0;
+  return dp >= 0 ? Math.min(dp, price) : 0;
 };
 const dueOf = o => Math.max(0, (Number(o.price) || 0) - paidOf(o));
 const normalize = o => ({
@@ -376,32 +389,33 @@ let tab = 'pending', query = '', limit = 40;
 let stat = { y: now.getFullYear(), m: now.getMonth() };
 let cal = { y: now.getFullYear(), m: now.getMonth() };
 let selDate = null;
-let customerMap = {};
+let phoneToNameMap = {};
 
 function commit() {
   store.set('ijs_orders', JSON.stringify(orders));
-  buildCustomerMap();
+  buildPhoneMap();
   renderAll();
 }
 
-function buildCustomerMap() {
-  customerMap = {};
-  const datalist = $('customerList');
+function buildPhoneMap() {
+  phoneToNameMap = {};
+  const datalist = $('phoneList');
   datalist.innerHTML = '';
   
   orders.forEach(o => {
-    if (o.name && o.phone && o.phone !== '-') {
-      customerMap[o.name.toLowerCase()] = o.phone;
+    if (o.phone && o.phone !== '-' && o.name) {
+      phoneToNameMap[o.phone] = o.name;
     }
   });
 
-  const uniqueNames = Object.keys(customerMap);
-  uniqueNames.sort();
+  const uniquePhones = Object.keys(phoneToNameMap);
+  uniquePhones.sort();
   
-  uniqueNames.forEach(lowerName => {
-    const originalName = orders.find(o => o.name.toLowerCase() === lowerName)?.name || lowerName;
+  uniquePhones.forEach(phone => {
+    const name = phoneToNameMap[phone];
     const opt = document.createElement('option');
-    opt.value = originalName;
+    opt.value = phone;
+    opt.label = `${phone} (${name})`;
     datalist.appendChild(opt);
   });
 }
@@ -461,11 +475,11 @@ $('loginForm').addEventListener('submit', async e => {
   }
 });
 
-/* ---------- Auto-Fill Phone on Customer Select ---------- */
-$('fName').addEventListener('input', e => {
-  const inputName = e.target.value.trim().toLowerCase();
-  if (customerMap[inputName]) {
-    $('fPhone').value = customerMap[inputName];
+/* ---------- Auto-Fill Name on Phone Input ---------- */
+$('fPhone').addEventListener('input', e => {
+  const clean = cleanPhone(e.target.value.trim());
+  if (phoneToNameMap[clean]) {
+    $('fName').value = phoneToNameMap[clean];
   }
 });
 
@@ -475,7 +489,28 @@ function renderAll() { renderStats(); renderList(); renderSide(); }
 function renderStats() {
   const pre = `${stat.y}-${pad(stat.m + 1)}`;
   let received = 0, total = 0, count = 0, pending = 0, due = 0;
+  
+  // Hitung rentang minggu ini (Senin - Minggu)
+  const curr = new Date();
+  const day = curr.getDay();
+  const diffToMonday = curr.getDate() - day + (day === 0 ? -6 : 1);
+  const startOfWeek = new Date(curr.setDate(diffToMonday));
+  startOfWeek.setHours(0,0,0,0);
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23,59,59,999);
+
+  let weeklyReceived = 0;
+
   orders.forEach(o => {
+    const pDate = parts(o.orderDate);
+    if (pDate.length === 3) {
+      const oDate = new Date(pDate[0], pDate[1] - 1, pDate[2]);
+      if (oDate >= startOfWeek && oDate <= endOfWeek) {
+        weeklyReceived += paidOf(o);
+      }
+    }
+
     if ((o.orderDate || '').startsWith(pre)) {
       received += paidOf(o);
       total += Number(o.price) || 0;
@@ -484,25 +519,27 @@ function renderStats() {
     if (!isDone(o)) pending++;
     due += dueOf(o);
   });
+
   $('statMonth').textContent = `${MONTHS[stat.m]} ${stat.y}`;
   $('revenue').textContent = rp(received);$('barFill').style.width = (total ? Math.round(received / total * 100) : 0) + '%';
   $('heroSub').textContent = count
     ? `Dari nilai order ${rp(total)} bulan ini. ${rp(total - received)} belum masuk.`
     : 'Belum ada order di bulan ini.';
-  $('stOrders').textContent = count;
+  
+  $('stWeekly').textContent = rp(weeklyReceived);$('stOrders').textContent = count;
   $('stPending').textContent = pending;
   $('stDue').textContent = rp(due);
 }
 
 function dueInfo(o) {
   if (!o.deadline) return { text: '', cls: '' };
-  if (isDone(o)) return { text: `Deadline ${fmtD(o.deadline)}`, cls: '' };
+  if (isDone(o)) return { text: `Deadline ${fmtDayDate(o.deadline)}`, cls: '' };
   const d = dayDiff(today(), o.deadline);
-  if (d < 0) return { text: `Telat ${-d} hari (${fmtD(o.deadline)})`, cls: 'late' };
-  if (d === 0) return { text: 'Deadline hari ini', cls: 'soon' };
-  if (d === 1) return { text: 'Deadline besok', cls: 'soon' };
-  if (d <= 3) return { text: `Deadline ${d} hari lagi`, cls: 'soon' };
-  return { text: `Deadline ${fmtD(o.deadline)}`, cls: '' };
+  if (d < 0) return { text: `Telat ${-d} hari (${fmtDayDate(o.deadline)})`, cls: 'late' };
+  if (d === 0) return { text: 'Deadline HARI INI', cls: 'soon' };
+  if (d === 1) return { text: 'Deadline BESOK', cls: 'soon' };
+  if (d <= 3) return { text: `Deadline ${d} hari lagi (${fmtDayDate(o.deadline)})`, cls: 'soon' };
+  return { text: `Deadline ${fmtDayDate(o.deadline)}`, cls: '' };
 }
 
 function visibleOrders() {
@@ -527,6 +564,9 @@ function cardHTML(o) {
   return `<article class="card order" data-id="${esc(o.id)}">
     <div class="o-head"><div class="o-name">${esc(o.name)}</div><div class="o-price">${rp(o.price)}</div></div>
     <div class="o-item">${esc(o.item)}</div>
+    <div class="o-date-info">
+      <span>Order: <b>${fmtDayDate(o.orderDate)}</b></span>
+    </div>
     <div class="o-meta"><span class="badge ${done ? 'ok' : 'warn'}">${done ? 'Selesai' : 'Pending'}</span>${pay}<span class="due ${di.cls}">${esc(di.text)}</span></div>
     <div class="o-actions">
       <button class="btn sm ${done ? '' : 'primary'}" data-act="toggle">${done ? 'Kembalikan ke pending' : 'Tandai selesai'}</button>
@@ -578,7 +618,7 @@ function renderSide() {
   renderCalendar();
   let list;
   if (selDate) {
-    $('sideTitle').textContent = `Deadline ${fmtD(selDate)}`;
+    $('sideTitle').textContent = `Deadline ${fmtDayDate(selDate)}`;
     list = orders.filter(o => o.deadline === selDate);
   } else {
     $('sideTitle').textContent = 'Deadline terdekat';
@@ -586,7 +626,17 @@ function renderSide() {
       .sort((a, b) => a.deadline.localeCompare(b.deadline)).slice(0, 6);
   }
   $('sideReset').classList.toggle('hidden', !selDate);$('sideList').innerHTML = list.length
-    ? list.map(o => { const di = dueInfo(o); return `<div class="mini"><div><b>${esc(o.name)}</b><small>${esc(o.item)}</small></div><div class="due ${di.cls}">${esc(isDone(o) ? 'Selesai' : di.text.replace('Deadline ', ''))}</div></div>`; }).join('')
+    ? list.map(o => {
+        const di = dueInfo(o);
+        return `<div class="mini">
+          <div>
+            <b>${esc(o.name)}</b>
+            <small>${esc(o.item)}</small>
+            <small style="display:block;color:var(--muted)">${fmtDayDate(o.deadline)}</small>
+          </div>
+          <div class="due ${di.cls}">${esc(isDone(o) ? 'Selesai' : di.text)}</div>
+        </div>`;
+      }).join('')
     : `<p class="empty" style="padding:14px 0">${selDate ? 'Tidak ada deadline di tanggal ini.' : 'Tidak ada pekerjaan yang menunggu.'}</p>`;
 }
 
@@ -658,7 +708,7 @@ function openOrder(o) {
   $('orderTitle').textContent = o ? 'Edit order' : 'Order baru';
   if (o) {
     $('fName').value = o.name; $('fPhone').value = o.phone === '-' ? '' : o.phone; $('fItem').value = o.item;
-    $('fPrice').value = o.price; $('fDp').value = o.dpAmount || '';
+    $('fPrice').value = o.price; $('fDp').value = o.dpAmount != null ? o.dpAmount : '';
     $('fOrderDate').value = o.orderDate; $('fDeadline').value = o.deadline;
     (o.paymentMode === 'Tempo' ? $('payDp') :$('payLunas')).checked = true;
   } else {
@@ -666,7 +716,7 @@ function openOrder(o) {
   }
   $('fDeadline').min =$('fOrderDate').value;
   syncPayUI();
-  $('orderDlg').showModal();$('fName').focus();
+  $('orderDlg').showModal();$('fPhone').focus();
 }
 $('addBtn').addEventListener('click', () => openOrder(null));
 
@@ -676,8 +726,8 @@ $('orderForm').addEventListener('submit', async e => {
   const name = $('fName').value.trim(), item =$('fItem').value.trim();
   const price = Number($('fPrice').value) || 0;
   let mode = payMode(), dp = mode === 'Tempo' ? (Number($('fDp').value) || 0) : 0;
-  if (mode === 'Tempo' && dp <= 0) { toast('Isi nominal DP, atau pilih Lunas di awal.'); return; }
-  if (mode === 'Tempo' && dp >= price) mode = 'Lunas';
+  
+  if (mode === 'Tempo' && dp >= price && price > 0) mode = 'Lunas';
   const orderDate = $('fOrderDate').value, deadline =$('fDeadline').value;
 
   const suggested = `IJS Buy ${name} ${item} ${fmtLong(orderDate)}`;
@@ -731,7 +781,7 @@ function buildReport(ym) {
   if (!list.length) L.push('(tidak ada order pada bulan ini)');
   list.forEach((o, i) => {
     const st = isLunas(o) ? 'Lunas' : `DP ${rp(paidOf(o))}, sisa ${rp(dueOf(o))}`;
-    L.push(`${i + 1}. ${fmtD(o.orderDate)} | ${o.name} | ${o.item} | ${rp(o.price)} | ${st}`);
+    L.push(`${i + 1}. ${fmtDayDate(o.orderDate)} | ${o.name} | ${o.item} | ${rp(o.price)} | ${st}`);
   });
   return L.join('\n');
 }
@@ -770,7 +820,7 @@ $('logoutBtn').addEventListener('click', logout);$('syncBtn').addEventListener('
 /* ---------- Mulai ---------- */
 if (key) {
   const cached = store.get('ijs_orders');
-  if (cached) { try { orders = JSON.parse(cached).map(normalize); buildCustomerMap(); } catch (_) {} }
+  if (cached) { try { orders = JSON.parse(cached).map(normalize); buildPhoneMap(); } catch (_) {} }
   showApp();
   renderAll();
   loadData(false).catch(err => {
