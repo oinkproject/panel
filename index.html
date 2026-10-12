@@ -1,712 +1,752 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IJS Joki - Executive Control Panel</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <style>
-    @media print {
-      body { background-color: #fff !important; color: #000 !important; }
-      #loginModal, #orderModal, .no-print { display: none !important; }
-      #appDashboard { display: block !important; max-width: 100% !important; padding: 0 !important; }
-      .bg-slate-800\/80, .bg-slate-900\/80, .bg-slate-800 { background: #fff !important; border: 1px solid #ccc !important; color: #000 !important; shadow: none !important; }
-      text-white, text-slate-300, text-slate-200, text-slate-400 { color: #000 !important; }
-      table { width: 100% !important; border-collapse: collapse !important; }
-      th, td { border: 1px solid #ddd !important; padding: 8px !important; color: #000 !important; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0e151d">
+<link rel="icon" href="data:,">
+<title>IJS Joki</title>
+<style>
+:root{
+  --bg:#0e151d;--surface:#151f2a;--surface2:#1b2733;--line:#263544;
+  --text:#e6edf3;--muted:#8a9bad;--money:#4cd1a0;--warn:#f0b94d;--danger:#ff7b6e;
+  --primary:#6ea8ff;--on-primary:#08121f;color-scheme:dark;
+}
+@media (prefers-color-scheme:light){
+  :root{
+    --bg:#f3f5f8;--surface:#fff;--surface2:#eef2f6;--line:#dbe2ea;
+    --text:#16202a;--muted:#5d6e80;--money:#0b8a62;--warn:#9a6200;--danger:#c23a2d;
+    --primary:#1d5fd0;--on-primary:#fff;color-scheme:light;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:inherit}
+.hidden{display:none!important}
+.muted{color:var(--muted)}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Tombol */
+.btn{border:1px solid var(--line);background:var(--surface2);padding:8px 14px;border-radius:10px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1.2;transition:filter .15s}
+.btn:hover{filter:brightness(1.12)}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.primary{background:var(--primary);color:var(--on-primary);border-color:transparent}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--danger)}
+.btn.danger-solid{background:var(--danger);color:#fff;border-color:transparent}
+.btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
+
+/* Kartu & badge */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.badge{--c:var(--muted);font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;border:1px solid color-mix(in srgb,var(--c) 38%,transparent);background:color-mix(in srgb,var(--c) 13%,transparent);color:var(--c);white-space:nowrap}
+.badge.ok{--c:var(--money)}.badge.warn{--c:var(--warn)}.badge.bad{--c:var(--danger)}
+
+/* Login */
+#login{min-height:100dvh;display:grid;place-items:center;padding:20px}
+#login .card{width:100%;max-width:340px;padding:26px}
+#login h1{margin:0 0 4px;font-size:20px}
+#login p{margin:0 0 18px}
+.field{display:block;margin-bottom:14px}
+.field>span{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}
+.input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.input:focus{border-color:var(--primary);outline:none}
+.err{color:var(--danger);font-size:13px;min-height:18px;margin:-4px 0 10px}
+
+/* Layout */
+.wrap{max-width:1100px;margin:0 auto;padding:16px 16px 48px}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.top h1{margin:0;font-size:18px;letter-spacing:-.01em}
+.top .acts{display:flex;gap:8px;flex-wrap:wrap}
+.layout{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){
+  .layout{grid-template-columns:minmax(0,1fr) 330px;align-items:start}
+  .side{position:sticky;top:16px}
+}
+
+/* Hero pendapatan */
+.hero{padding:18px;margin-bottom:16px}
+.hero-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.monthnav{display:flex;align-items:center;gap:4px}
+.monthnav button{border:1px solid var(--line);background:var(--surface2);width:30px;height:30px;border-radius:8px;font-size:16px;line-height:1}
+.monthnav span{min-width:112px;text-align:center;font-weight:600;font-size:14px}
+.money{font-size:clamp(30px,8vw,44px);font-weight:750;letter-spacing:-.02em;color:var(--money);font-variant-numeric:tabular-nums;margin:6px 0 10px}
+.bar{height:6px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--money);border-radius:99px;transition:width .3s}
+.hero-sub{font-size:13px;color:var(--muted);margin:8px 0 14px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface2);border-radius:10px;padding:10px 12px}
+.stat b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+
+/* Daftar order */
+.list-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px}
+.tabs{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.tabs button{border:0;background:transparent;padding:6px 12px;border-radius:8px;font-weight:600;font-size:13px;color:var(--muted)}
+.tabs button[aria-pressed="true"]{background:var(--surface2);color:var(--text)}
+.search{flex:1;min-width:150px}
+#list{display:grid;gap:10px}
+.order{padding:14px;display:grid;gap:8px}
+.o-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.o-name{font-weight:650;font-size:16px;overflow-wrap:anywhere}
+.o-price{font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
+.o-item{color:var(--muted);overflow-wrap:anywhere}
+.o-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:13px}
+.due{font-size:13px;color:var(--muted)}
+.due.late{color:var(--danger);font-weight:650}
+.due.soon{color:var(--warn);font-weight:650}
+.o-actions{display:flex;flex-wrap:wrap;gap:6px;padding-top:4px}
+.empty{color:var(--muted);text-align:center;padding:28px 12px;margin:0}
+
+/* Sisi: kalender */
+.side .card{padding:14px}
+.side h2{font-size:15px;margin:0}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.dow,.cal{display:grid;grid-template-columns:repeat(7,1fr);text-align:center}
+.dow{font-size:12px;color:var(--muted);margin-bottom:2px}
+.cal{gap:2px}
+.day{border:0;background:transparent;height:36px;border-radius:9px;position:relative;font-size:14px}
+.day:hover{background:var(--surface2)}
+.day.today{box-shadow:inset 0 0 0 1.5px var(--primary)}
+.day.has::after,.day.late::after{content:"";position:absolute;left:50%;bottom:4px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--warn)}
+.day.late::after{background:var(--danger)}
+.day.sel{background:var(--primary);color:var(--on-primary);font-weight:650}
+.day.sel::after{background:var(--on-primary)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.side-title{display:flex;align-items:center;justify-content:space-between;margin:16px 0 8px}
+.mini{padding:9px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}
+.mini:first-child{border-top:0}
+.mini b{display:block;overflow-wrap:anywhere}
+.mini small{color:var(--muted)}
+
+/* Dialog */
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--text);padding:0;width:calc(100% - 24px);max-width:460px;max-height:calc(100dvh - 24px);overflow:auto}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.dlg{padding:20px}
+.dlg h3{margin:0 0 14px;font-size:18px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{text-align:center;padding:9px;border:1px solid var(--line);border-radius:10px;font-weight:600;cursor:pointer;background:var(--bg)}
+.seg input:checked+label{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 16%,transparent)}
+.seg input:focus-visible+label{outline:2px solid var(--primary);outline-offset:2px}
+.dlg-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.report{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;font:12.5px/1.55 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:46dvh;overflow:auto;margin:12px 0}
+
+/* Toast */
+#toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;max-width:calc(100% - 32px);z-index:99;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* Cetak: hanya teks laporan */
+#printArea{display:none}
+@media print{
+  body>*:not(#printArea){display:none!important}
+  body{background:#fff}
+  #printArea{display:block;white-space:pre-wrap;font:12pt/1.55 ui-monospace,Menlo,Consolas,monospace;color:#000;background:#fff}
+  @page{margin:18mm}
+}
+</style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased pb-12">
+<body>
 
-  <!-- PASSWORD MODAL (LOGIN) -->
-  <div id="loginModal" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
-      <div class="w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-500/30">
-        <i class="fa-solid fa-lock text-2xl"></i>
+<!-- LOGIN -->
+<main id="login" class="hidden">
+  <form id="loginForm" class="card" autocomplete="off">
+    <h1>IJS Joki</h1>
+    <p class="muted">Masukkan password untuk membuka dashboard.</p>
+    <label class="field"><span>Password</span>
+      <input id="passInput" class="input" type="password" required autocomplete="current-password">
+    </label>
+    <div id="loginErr" class="err" role="alert"></div>
+    <button id="loginBtn" class="btn primary" style="width:100%">Buka dashboard</button>
+  </form>
+</main>
+
+<!-- APP -->
+<div id="app" class="wrap hidden">
+  <header class="top">
+    <h1>IJS Joki</h1>
+    <div class="acts">
+      <button class="btn primary" id="addBtn">+ Order baru</button>
+      <button class="btn" id="reportBtn">Laporan</button>
+      <button class="btn ghost" id="syncBtn" title="Muat ulang dari Google Sheets">Muat ulang</button>
+      <button class="btn ghost" id="logoutBtn">Keluar</button>
+    </div>
+  </header>
+
+  <section class="card hero" aria-label="Pendapatan">
+    <div class="hero-top">
+      <span class="muted">Pendapatan masuk</span>
+      <div class="monthnav">
+        <button id="prevMonth" aria-label="Bulan sebelumnya">&lsaquo;</button>
+        <span id="statMonth"></span>
+        <button id="nextMonth" aria-label="Bulan berikutnya">&rsaquo;</button>
       </div>
-      <h2 class="text-xl font-bold text-white mb-1">Akses Terkunci</h2>
-      <p class="text-slate-400 text-xs mb-6">Masukkan password untuk membuka IJS Pro Panel</p>
-      
-      <form onsubmit="checkPassword(event)" class="space-y-4">
-        <input type="password" id="passInput" placeholder="Masukkan Password..." required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-center focus:outline-none focus:border-indigo-500 text-sm tracking-widest">
-        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold p-3 rounded-xl transition shadow-lg text-sm">
-          Buka Dashboard
-        </button>
-      </form>
+    </div>
+    <div class="money" id="revenue">Rp 0</div>
+    <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+    <div class="hero-sub" id="heroSub"></div>
+    <div class="stats">
+      <div class="stat"><b id="stOrders">0</b><span>Order bulan ini</span></div>
+      <div class="stat"><b id="stPending">0</b><span>Pekerjaan pending</span></div>
+      <div class="stat"><b id="stDue">Rp 0</b><span>Sisa tagihan</span></div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <main>
+      <div class="list-head">
+        <div class="tabs" role="group" aria-label="Filter order">
+          <button data-tab="pending" aria-pressed="true">Pending <span id="cPending">0</span></button>
+          <button data-tab="done" aria-pressed="false">Selesai <span id="cDone">0</span></button>
+          <button data-tab="all" aria-pressed="false">Semua <span id="cAll">0</span></button>
+        </div>
+        <input id="search" class="input search" type="search" placeholder="Cari nama, item, atau nomor" aria-label="Cari order">
+      </div>
+      <div id="list"><p class="empty">Memuat data…</p></div>
+    </main>
+
+    <aside class="side">
+      <div class="card">
+        <div class="cal-head">
+          <h2 id="calTitle"></h2>
+          <div class="monthnav">
+            <button id="calPrev" aria-label="Bulan sebelumnya">&lsaquo;</button>
+            <button id="calNext" aria-label="Bulan berikutnya">&rsaquo;</button>
+          </div>
+        </div>
+        <div class="dow"><span>Min</span><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span></div>
+        <div class="cal" id="calGrid"></div>
+        <div class="legend"><span><i style="background:var(--warn)"></i>Deadline</span><span><i style="background:var(--danger)"></i>Terlewat</span></div>
+        <div class="side-title">
+          <h2 id="sideTitle">Deadline terdekat</h2>
+          <button class="btn sm ghost hidden" id="sideReset">Lihat terdekat</button>
+        </div>
+        <div id="sideList"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- DIALOG: ORDER -->
+<dialog id="orderDlg">
+  <form id="orderForm" class="dlg" autocomplete="off">
+    <h3 id="orderTitle">Order baru</h3>
+    <input type="hidden" id="editId">
+    <label class="field"><span>Nama client</span><input id="fName" class="input" required placeholder="Contoh: Kiera"></label>
+    <label class="field"><span>Nomor WhatsApp</span><input id="fPhone" class="input" required inputmode="tel" placeholder="081234567890"></label>
+    <label class="field"><span>Item / jasa</span><input id="fItem" class="input" required placeholder="Contoh: Logo"></label>
+    <div class="field"><span>Pembayaran</span></div>
+    <div class="seg" style="margin-top:-8px">
+      <input type="radio" name="pay" id="payLunas" value="Lunas" checked><label for="payLunas">Lunas di awal</label>
+      <input type="radio" name="pay" id="payDp" value="Tempo"><label for="payDp">DP dulu</label>
+    </div>
+    <div class="row2">
+      <label class="field"><span>Harga penuh (Rp)</span><input id="fPrice" class="input" type="number" min="0" required inputmode="numeric" placeholder="150000"></label>
+      <label class="field hidden" id="dpField"><span>DP masuk (Rp)</span><input id="fDp" class="input" type="number" min="0" inputmode="numeric" placeholder="50000"></label>
+    </div>
+    <div class="row2">
+      <label class="field"><span>Tanggal order</span><input id="fOrderDate" class="input" type="date" required></label>
+      <label class="field"><span>Deadline</span><input id="fDeadline" class="input" type="date" required></label>
+    </div>
+    <div class="dlg-acts">
+      <button type="button" class="btn ghost" data-close>Batal</button>
+      <button class="btn primary" id="saveBtn">Simpan</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- DIALOG: LAPORAN -->
+<dialog id="reportDlg">
+  <div class="dlg">
+    <h3>Laporan pendapatan</h3>
+    <label class="field" style="margin-bottom:0"><span>Bulan</span><input id="repMonth" class="input" type="month" placeholder="2026-10"></label>
+    <div class="report" id="reportText"></div>
+    <div class="dlg-acts">
+      <button class="btn ghost" data-close>Tutup</button>
+      <button class="btn" id="copyReport">Salin teks</button>
+      <button class="btn primary" id="printReport">Cetak / simpan PDF</button>
     </div>
   </div>
+</dialog>
 
-  <!-- DASHBOARD WRAPPER -->
-  <div id="appDashboard" class="hidden max-w-7xl mx-auto p-4 md:p-8">
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-slate-800 pb-6">
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="bg-indigo-500/20 text-indigo-400 text-xs font-bold px-2.5 py-1 rounded-md border border-indigo-500/30">PRO PANEL</span>
-          <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">IJS Joki Management</h1>
-        </div>
-        <p class="text-slate-400 text-sm mt-1">Overview performa bisnis, tracking leads, orderan, dan status pembayaran.</p>
-      </div>
-      <div class="flex items-center gap-3 no-print">
-        <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg transition flex items-center gap-2 text-sm">
-          <i class="fa-solid fa-file-pdf"></i> Cetak / PDF Laporan
-        </button>
-        <button onclick="openModal('add')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg transition flex items-center gap-2 text-sm">
-          <i class="fa-solid fa-plus"></i> Input Order Baru
-        </button>
-        <button onclick="logout()" title="Keluar" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2.5 rounded-xl border border-slate-700 transition">
-          <i class="fa-solid fa-right-from-bracket"></i>
-        </button>
-      </div>
+<!-- DIALOG: KONFIRMASI -->
+<dialog id="confirmDlg">
+  <form method="dialog" class="dlg">
+    <p id="confirmMsg" style="margin:0 0 16px"></p>
+    <div class="dlg-acts">
+      <button class="btn ghost" value="cancel">Batal</button>
+      <button class="btn primary" id="confirmOk" value="ok">Ya</button>
     </div>
+  </form>
+</dialog>
 
-    <!-- Analytics Dashboard Grid -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-      <div class="col-span-2 bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
-        <div class="flex items-center justify-between">
-          <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Omset Bulan Ini</span>
-          <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-            <i class="fa-solid fa-wallet text-sm"></i>
-          </div>
-        </div>
-        <p id="total-revenue" class="text-2xl md:text-3xl font-black text-emerald-400 mt-2">Rp 0</p>
-      </div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="printArea"></div>
 
-      <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
-        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Order Bulan Ini</span>
-        <p id="month-orders" class="text-2xl font-black text-white mt-2">0</p>
-      </div>
+<script>
+(() => {
+'use strict';
 
-      <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
-        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total Leads/Cust</span>
-        <p id="total-cust" class="text-2xl font-black text-blue-400 mt-2">0</p>
-      </div>
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxJ0qOZNoYGq99cRSnrhvki8OHxLwNhgQvIWhU1TwzSLpTx3xWjC8YcuYtsjTjtLg4/exec";
 
-      <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
-        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Buy / Ask</span>
-        <div class="flex items-baseline gap-2 mt-2">
-          <span id="total-buy" class="text-2xl font-black text-indigo-400">0</span>
-          <span class="text-slate-500 font-bold">/</span>
-          <span id="total-ask" class="text-2xl font-black text-slate-400">0</span>
-        </div>
-      </div>
+/* ---------- Util ---------- */
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const MONTHS = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const MON = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rp = n => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const today = () => ymd(new Date());
+const parts = s => s.split('-').map(Number);
+const fmtD = s => { if (!s) return '-'; const [y, m, d] = parts(s); return `${d} ${MON[m - 1]} ${y}`; };
+const fmtLong = s => { const [y, m, d] = parts(s); return `${d} ${MONTHS[m - 1]} ${y}`; };
+const dayDiff = (a, b) => { const x = parts(a), y = parts(b); return Math.round((Date.UTC(y[0], y[1] - 1, y[2]) - Date.UTC(x[0], x[1] - 1, x[2])) / 864e5); };
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (_) {} }
+};
 
-      <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
-        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Pending / Done</span>
-        <div class="flex items-baseline gap-2 mt-2">
-          <span id="total-pending" class="text-2xl font-black text-amber-400">0</span>
-          <span class="text-slate-500 font-bold">/</span>
-          <span id="total-done" class="text-2xl font-black text-emerald-400">0</span>
-        </div>
-      </div>
+function cleanPhone(p) {
+  if (!p || p === '-') return '-';
+  let c = String(p).replace(/\D/g, '');
+  if (!c) return '-';
+  if (c.startsWith('0')) c = '62' + c.slice(1);
+  else if (c.startsWith('8')) c = '62' + c;
+  if (c.startsWith('620')) c = '62' + c.slice(3);
+  if (c.startsWith('62628')) c = c.slice(2);
+  return c;
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3400);
+}
+
+function ask(msg, okText, danger) {
+  return new Promise(resolve => {
+    const d = $('confirmDlg'), ok = $('confirmOk');
+    $('confirmMsg').textContent = msg;
+    ok.textContent = okText;
+    ok.classList.toggle('danger-solid', !!danger);
+    ok.classList.toggle('primary', !danger);
+    d.returnValue = '';
+    d.addEventListener('close', () => resolve(d.returnValue === 'ok'), { once: true });
+    d.showModal();
+  });
+}
+
+/* ---------- Model ---------- */
+const isDone = o => /^(selesai|done)$/i.test(o.status || '');
+const isLunas = o => /^lunas$/i.test(o.payStatus || '') || o.paymentMode === 'Lunas';
+const paidOf = o => isLunas(o) ? o.price : Math.min(o.dpAmount || 0, o.price);
+const dueOf = o => Math.max(0, o.price - paidOf(o));
+const normalize = o => ({
+  id: String(o.id), phone: cleanPhone(o.phone), name: o.name || '', item: o.item || '',
+  price: Number(o.price) || 0, orderDate: o.orderDate || '', deadline: o.deadline || '',
+  status: o.status || 'Pending', paymentMode: o.paymentMode || 'Lunas',
+  dpAmount: Number(o.dpAmount) || 0, payStatus: o.payStatus || 'Lunas'
+});
+
+/* ---------- State ---------- */
+const now = new Date();
+let key = store.get('ijs_key') || '';
+let orders = [];
+let tab = 'pending', query = '', limit = 40;
+let stat = { y: now.getFullYear(), m: now.getMonth() };
+let cal = { y: now.getFullYear(), m: now.getMonth() };
+let selDate = null;
+
+function commit() {
+  store.set('ijs_orders', JSON.stringify(orders));
+  renderAll();
+}
+
+/* ---------- API ---------- */
+async function loadData(fresh) {
+  const url = `${GAS_URL}?key=${encodeURIComponent(key)}${fresh ? '&fresh=1' : ''}`;
+  const res = await fetch(url);
+  const r = await res.json();
+  if (r.status !== 'success') {
+    const e = new Error(r.message || 'Gagal memuat');
+    e.auth = /password/i.test(e.message);
+    throw e;
+  }
+  orders = (r.data || []).map(normalize);
+  commit();
+}
+
+async function apiPost(action, payload) {
+  const res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(Object.assign({ action, key }, payload)) });
+  const r = await res.json();
+  if (r.status !== 'success') throw new Error(r.message || 'Gagal menyimpan');
+  return r;
+}
+
+// Ubah tampilan dulu (terasa instan), lalu kirim ke server. Gagal -> muat ulang.
+async function mutate(action, payload, apply) {
+  apply();
+  commit();
+  try {
+    await apiPost(action, payload);
+  } catch (err) {
+    toast('Gagal menyimpan. Data dimuat ulang.');
+    loadData(true).catch(() => {});
+  }
+}
+
+/* ---------- Login ---------- */
+function showApp() { $('login').classList.add('hidden'); $('app').classList.remove('hidden'); }
+function showLogin() { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); $('passInput').focus(); }
+function logout() { store.del('ijs_key'); store.del('ijs_orders'); location.reload(); }
+
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = $('loginBtn'), errBox = $('loginErr');
+  errBox.textContent = '';
+  btn.disabled = true; btn.textContent = 'Memeriksa…';
+  key = $('passInput').value;
+  try {
+    await loadData(true);
+    store.set('ijs_key', key);
+    showApp();
+  } catch (err) {
+    key = '';
+    errBox.textContent = err.auth ? 'Password salah.' : 'Tidak bisa terhubung. Periksa koneksi lalu coba lagi.';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Buka dashboard';
+  }
+});
+
+/* ---------- Render ---------- */
+function renderAll() { renderStats(); renderList(); renderSide(); }
+
+function renderStats() {
+  const pre = `${stat.y}-${pad(stat.m + 1)}`;
+  let received = 0, total = 0, count = 0, pending = 0, due = 0;
+  orders.forEach(o => {
+    if ((o.orderDate || '').startsWith(pre)) { received += paidOf(o); total += o.price; count++; }
+    if (!isDone(o)) pending++;
+    due += dueOf(o);
+  });
+  $('statMonth').textContent = `${MONTHS[stat.m]} ${stat.y}`;
+  $('revenue').textContent = rp(received);
+  $('barFill').style.width = (total ? Math.round(received / total * 100) : 0) + '%';
+  $('heroSub').textContent = count
+    ? `Dari nilai order ${rp(total)} bulan ini. ${rp(total - received)} belum masuk.`
+    : 'Belum ada order di bulan ini.';
+  $('stOrders').textContent = count;
+  $('stPending').textContent = pending;
+  $('stDue').textContent = rp(due);
+}
+
+function dueInfo(o) {
+  if (!o.deadline) return { text: '', cls: '' };
+  if (isDone(o)) return { text: `Deadline ${fmtD(o.deadline)}`, cls: '' };
+  const d = dayDiff(today(), o.deadline);
+  if (d < 0) return { text: `Telat ${-d} hari (${fmtD(o.deadline)})`, cls: 'late' };
+  if (d === 0) return { text: 'Deadline hari ini', cls: 'soon' };
+  if (d === 1) return { text: 'Deadline besok', cls: 'soon' };
+  if (d <= 3) return { text: `Deadline ${d} hari lagi`, cls: 'soon' };
+  return { text: `Deadline ${fmtD(o.deadline)}`, cls: '' };
+}
+
+function visibleOrders() {
+  let l = orders.filter(o => tab === 'all' || (tab === 'done' ? isDone(o) : !isDone(o)));
+  if (query) {
+    const q = query.toLowerCase();
+    l = l.filter(o => `${o.name} ${o.item} ${o.phone}`.toLowerCase().includes(q));
+  }
+  l.sort(tab === 'pending'
+    ? (a, b) => (a.deadline || '9').localeCompare(b.deadline || '9')
+    : (a, b) => (b.orderDate || '').localeCompare(a.orderDate || ''));
+  return l;
+}
+
+function cardHTML(o) {
+  const done = isDone(o), lunas = isLunas(o), di = dueInfo(o);
+  const pay = lunas
+    ? '<span class="badge ok">Lunas</span>'
+    : `<span class="badge bad">Sisa ${rp(dueOf(o))}</span>${o.dpAmount ? `<span class="muted">DP ${rp(o.dpAmount)}</span>` : ''}`;
+  const wa = o.phone !== '-'
+    ? `<a class="btn sm" href="https://wa.me/${o.phone}" target="_blank" rel="noopener" title="${esc(o.phone)}">WhatsApp</a>` : '';
+  return `<article class="card order" data-id="${esc(o.id)}">
+    <div class="o-head"><div class="o-name">${esc(o.name)}</div><div class="o-price">${rp(o.price)}</div></div>
+    <div class="o-item">${esc(o.item)}</div>
+    <div class="o-meta"><span class="badge ${done ? 'ok' : 'warn'}">${done ? 'Selesai' : 'Pending'}</span>${pay}<span class="due ${di.cls}">${esc(di.text)}</span></div>
+    <div class="o-actions">
+      <button class="btn sm ${done ? '' : 'primary'}" data-act="toggle">${done ? 'Kembalikan ke pending' : 'Tandai selesai'}</button>
+      ${lunas ? '' : '<button class="btn sm" data-act="lunas">Set lunas</button>'}
+      ${wa}
+      <button class="btn sm ghost" data-act="edit">Edit</button>
+      <button class="btn sm ghost danger" data-act="delete">Hapus</button>
     </div>
+  </article>`;
+}
 
-    <!-- WIDGET KALENDER & SIDEBAR DEADLINE -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 no-print">
-      <div class="lg:col-span-2 bg-slate-800/80 border border-slate-700/60 rounded-2xl p-5 shadow-xl">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="font-bold text-slate-200 text-lg flex items-center gap-2">
-            <i class="fa-solid fa-calendar-days text-amber-400"></i> Kalender Deadline
-          </h2>
-          <div class="flex items-center gap-2">
-            <button onclick="changeMonth(-1)" class="bg-slate-700/60 hover:bg-slate-600 px-3 py-1 rounded-lg text-xs font-semibold transition">
-              <i class="fa-solid fa-chevron-left"></i>
-            </button>
-            <span id="calendarMonthTitle" class="text-sm font-bold text-white min-w-[120px] text-center">...</span>
-            <button onclick="changeMonth(1)" class="bg-slate-700/60 hover:bg-slate-600 px-3 py-1 rounded-lg text-xs font-semibold transition">
-              <i class="fa-solid fa-chevron-right"></i>
-            </button>
-          </div>
-        </div>
+function renderList() {
+  const done = orders.filter(isDone).length;
+  $('cPending').textContent = orders.length - done;
+  $('cDone').textContent = done;
+  $('cAll').textContent = orders.length;
 
-        <div class="grid grid-cols-7 text-center text-xs font-bold text-slate-400 mb-2">
-          <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
-        </div>
+  const l = visibleOrders();
+  let html;
+  if (!l.length) {
+    html = `<p class="empty">${query ? 'Tidak ada order yang cocok.' : 'Belum ada order di sini. Tekan “Order baru” untuk mencatat.'}</p>`;
+  } else {
+    html = l.slice(0, limit).map(cardHTML).join('');
+    if (l.length > limit) html += `<button class="btn" data-act="more">Tampilkan ${Math.min(40, l.length - limit)} lagi (${l.length - limit} tersisa)</button>`;
+  }
+  $('list').innerHTML = html;
+}
 
-        <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
-        
-        <div class="flex items-center gap-4 mt-4 text-xs text-slate-400 pt-3 border-t border-slate-700/50">
-          <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded-full bg-amber-400 border border-amber-300"></span>
-            <span>Ada Deadline Pending</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded-full border-2 border-indigo-500"></span>
-            <span>Hari Ini</span>
-          </div>
-        </div>
-      </div>
+function renderCalendar() {
+  const { y, m } = cal, t = today();
+  $('calTitle').textContent = `${MONTHS[m]} ${y}`;
+  const first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+  const pend = {};
+  orders.forEach(o => { if (!isDone(o) && o.deadline) pend[o.deadline] = true; });
+  const out = [];
+  for (let i = 0; i < first; i++) out.push('<span></span>');
+  for (let d = 1; d <= days; d++) {
+    const s = `${y}-${pad(m + 1)}-${pad(d)}`;
+    const c = ['day'];
+    if (pend[s]) c.push(s < t ? 'late' : 'has');
+    if (s === t) c.push('today');
+    if (s === selDate) c.push('sel');
+    out.push(`<button type="button" class="${c.join(' ')}" data-date="${s}" aria-pressed="${s === selDate}">${d}</button>`);
+  }
+  $('calGrid').innerHTML = out.join('');
+}
 
-      <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-3">
-            <h3 class="font-bold text-slate-200 text-md flex items-center gap-2">
-              <i class="fa-solid fa-clock text-indigo-400"></i> Info Deadline
-            </h3>
-            <span id="selectedDateBadge" class="text-xs bg-indigo-500/20 text-indigo-300 px-2.5 py-1 rounded-md border border-indigo-500/30 font-mono">Pilih Tanggal</span>
-          </div>
-          
-          <div id="deadlineDetailContainer" class="space-y-3 max-h-[260px] overflow-y-auto pr-1">
-            <p class="text-slate-500 text-xs text-center py-8">Klik tanggal berlingkaran kuning pada kalender untuk melihat detail orderan/deadline.</p>
-          </div>
-        </div>
-      </div>
-    </div>
+function renderSide() {
+  renderCalendar();
+  let list;
+  if (selDate) {
+    $('sideTitle').textContent = `Deadline ${fmtD(selDate)}`;
+    list = orders.filter(o => o.deadline === selDate);
+  } else {
+    $('sideTitle').textContent = 'Deadline terdekat';
+    list = orders.filter(o => !isDone(o) && o.deadline)
+      .sort((a, b) => a.deadline.localeCompare(b.deadline)).slice(0, 6);
+  }
+  $('sideReset').classList.toggle('hidden', !selDate);
+  $('sideList').innerHTML = list.length
+    ? list.map(o => { const di = dueInfo(o); return `<div class="mini"><div><b>${esc(o.name)}</b><small>${esc(o.item)}</small></div><div class="due ${di.cls}">${esc(isDone(o) ? 'Selesai' : di.text.replace('Deadline ', ''))}</div></div>`; }).join('')
+    : `<p class="empty" style="padding:14px 0">${selDate ? 'Tidak ada deadline di tanggal ini.' : 'Tidak ada pekerjaan yang menunggu.'}</p>`;
+}
 
-    <!-- TABLE ORDERS WITH TAB FILTER -->
-    <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl shadow-xl overflow-hidden">
-      <div class="p-5 border-b border-slate-700/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h2 class="font-bold text-slate-200 text-lg flex items-center gap-2">
-          <i class="fa-solid fa-list-check text-indigo-400"></i> Daftar Transaksi
-        </h2>
-        
-        <div class="flex items-center bg-slate-900/80 p-1 rounded-xl border border-slate-700/60 text-xs font-semibold no-print">
-          <button onclick="setTabFilter('Pending')" id="tabPending" class="px-3.5 py-1.5 rounded-lg transition text-amber-400 bg-slate-800 border border-slate-700">
-            ⏳ Pending (<span id="countTabPending">0</span>)
-          </button>
-          <button onclick="setTabFilter('Selesai')" id="tabDone" class="px-3.5 py-1.5 rounded-lg transition text-slate-400 hover:text-emerald-400">
-            ✅ Selesai (<span id="countTabDone">0</span>)
-          </button>
-          <button onclick="setTabFilter('All')" id="tabAll" class="px-3.5 py-1.5 rounded-lg transition text-slate-400 hover:text-white">
-            Semua (<span id="countTabAll">0</span>)
-          </button>
-        </div>
-      </div>
+/* ---------- Event: daftar & kalender ---------- */
+$('list').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  if (btn.dataset.act === 'more') { limit += 40; renderList(); return; }
+  const card = btn.closest('[data-id]');
+  const o = card && orders.find(x => x.id === card.dataset.id);
+  if (!o) return;
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse text-sm">
-          <thead>
-            <tr class="bg-slate-900/50 text-slate-400 border-b border-slate-700/60">
-              <th class="p-4">Customer</th>
-              <th class="p-4">No. WhatsApp</th>
-              <th class="p-4">Item Jasa</th>
-              <th class="p-4">Harga / DP</th>
-              <th class="p-4">Status Bayar</th>
-              <th class="p-4">Deadline</th>
-              <th class="p-4">Pekerjaan</th>
-              <th class="p-4 text-center no-print">Aksi Status & CRUD</th>
-            </tr>
-          </thead>
-          <tbody id="order-rows" class="divide-y divide-slate-700/40 text-slate-300">
-            <tr>
-              <td colspan="8" class="p-6 text-center text-slate-500">Memuat data...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL FORM INPUT & EDIT -->
-  <div id="orderModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-      <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-        <i class="fa-solid fa-xmark text-xl"></i>
-      </button>
-      
-      <h3 id="modalTitle" class="text-xl font-bold text-white mb-4">Input Order Baru</h3>
-      
-      <form id="orderForm" onsubmit="submitForm(event)" class="space-y-4">
-        <input type="hidden" id="editOrderId">
-        
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">TIPE ENQUIRY</label>
-          <select id="type" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
-            <option value="Buy">Buy (Order Langsung)</option>
-            <option value="Ask">Ask (Tanya-tanya / Lead)</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">NAMA CLIENT</label>
-          <input type="text" id="clientName" required placeholder="Contoh: Kiera" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">NOMOR WHATSAPP</label>
-          <input type="text" id="phone" required placeholder="Contoh: 081234567890" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">ITEM / JASA YANG DIORDER</label>
-          <input type="text" id="item" required placeholder="Contoh: Logo" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">SKEMA PEMBAYARAN</label>
-          <select id="paymentMode" onchange="handlePaymentModeChange()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
-            <option value="Lunas">Lunas di Awal</option>
-            <option value="Tempo">Bayar Tempo / DP</option>
-          </select>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">HARGA FULL (RP)</label>
-            <input type="number" id="price" required placeholder="150000" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
-          </div>
-          <div id="dpContainer" class="hidden">
-            <label class="block text-xs font-semibold text-slate-400 mb-1">NOMINAL DP (RP)</label>
-            <input type="number" id="dpAmount" placeholder="50000" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">TANGGAL ORDER</label>
-            <input type="date" id="orderDate" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 [color-scheme:dark]">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">DEADLINE</label>
-            <input type="date" id="deadline" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 [color-scheme:dark]">
-          </div>
-        </div>
-
-        <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold p-3 rounded-xl mt-2 transition shadow-lg">
-          Simpan Data & Copy Rename WA
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxJ0qOZNoYGq99cRSnrhvki8OHxLwNhgQvIWhU1TwzSLpTx3xWjC8YcuYtsjTjtLg4/exec";
-    const PASS_KEY = "ikmalsayang";
-    let globalOrders = [];
-    let activeTab = "Pending";
-    let currentCalendarDate = new Date();
-
-    function checkPassword(e) {
-      if(e) e.preventDefault();
-      const input = document.getElementById('passInput').value;
-      if (input === PASS_KEY) {
-        localStorage.setItem('ijs_auth', 'true');
-        document.getElementById('loginModal').classList.add('hidden');
-        document.getElementById('appDashboard').classList.remove('hidden');
-        loadData();
-      } else {
-        alert("🔒 Password salah!");
+  switch (btn.dataset.act) {
+    case 'toggle': {
+      const next = isDone(o) ? 'Pending' : 'Selesai';
+      mutate('update_status', { orderId: o.id, newStatus: next }, () => { o.status = next; });
+      break;
+    }
+    case 'lunas':
+      if (await ask(`Set pembayaran ${o.name} (${rp(o.price)}) menjadi lunas?`, 'Set lunas', false)) {
+        mutate('update_payment', { orderId: o.id }, () => { o.paymentMode = 'Lunas'; o.payStatus = 'Lunas'; });
       }
-    }
-
-    function autoLogin() {
-      if (localStorage.getItem('ijs_auth') === 'true') {
-        document.getElementById('loginModal').classList.add('hidden');
-        document.getElementById('appDashboard').classList.remove('hidden');
-        loadData();
+      break;
+    case 'edit': openOrder(o); break;
+    case 'delete':
+      if (await ask(`Hapus order ${o.name} - ${o.item}? Data tidak bisa dikembalikan.`, 'Hapus', true)) {
+        mutate('delete_order', { orderId: o.id }, () => { orders = orders.filter(x => x.id !== o.id); });
       }
+      break;
+  }
+});
+
+document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => {
+  tab = b.dataset.tab; limit = 40;
+  document.querySelectorAll('[data-tab]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  renderList();
+}));
+
+let searchTimer;
+$('search').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { query = e.target.value.trim(); limit = 40; renderList(); }, 150);
+});
+
+$('calGrid').addEventListener('click', e => {
+  const b = e.target.closest('[data-date]');
+  if (!b) return;
+  selDate = selDate === b.dataset.date ? null : b.dataset.date;
+  renderSide();
+});
+$('sideReset').addEventListener('click', () => { selDate = null; renderSide(); });
+const moveCal = d => { const x = new Date(cal.y, cal.m + d, 1); cal = { y: x.getFullYear(), m: x.getMonth() }; renderCalendar(); };
+$('calPrev').addEventListener('click', () => moveCal(-1));
+$('calNext').addEventListener('click', () => moveCal(1));
+const moveStat = d => { const x = new Date(stat.y, stat.m + d, 1); stat = { y: x.getFullYear(), m: x.getMonth() }; renderStats(); };
+$('prevMonth').addEventListener('click', () => moveStat(-1));
+$('nextMonth').addEventListener('click', () => moveStat(1));
+
+/* ---------- Form order ---------- */
+const payMode = () => document.querySelector('input[name="pay"]:checked').value;
+function syncPayUI() {
+  const dp = payMode() === 'Tempo';
+  $('dpField').classList.toggle('hidden', !dp);
+  $('fDp').required = dp;
+  if (!dp) $('fDp').value = '';
+}
+document.querySelectorAll('input[name="pay"]').forEach(r => r.addEventListener('change', syncPayUI));
+$('fOrderDate').addEventListener('change', e => { $('fDeadline').min = e.target.value; });
+
+function openOrder(o) {
+  $('orderForm').reset();
+  $('editId').value = o ? o.id : '';
+  $('orderTitle').textContent = o ? 'Edit order' : 'Order baru';
+  if (o) {
+    $('fName').value = o.name; $('fPhone').value = o.phone === '-' ? '' : o.phone; $('fItem').value = o.item;
+    $('fPrice').value = o.price; $('fDp').value = o.dpAmount || '';
+    $('fOrderDate').value = o.orderDate; $('fDeadline').value = o.deadline;
+    (o.paymentMode === 'Tempo' ? $('payDp') : $('payLunas')).checked = true;
+  } else {
+    $('fOrderDate').value = today();
+  }
+  $('fDeadline').min = $('fOrderDate').value;
+  syncPayUI();
+  $('orderDlg').showModal();
+  $('fName').focus();
+}
+$('addBtn').addEventListener('click', () => openOrder(null));
+
+$('orderForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const editId = $('editId').value;
+  const name = $('fName').value.trim(), item = $('fItem').value.trim();
+  const price = Number($('fPrice').value) || 0;
+  let mode = payMode(), dp = mode === 'Tempo' ? (Number($('fDp').value) || 0) : 0;
+  if (mode === 'Tempo' && dp <= 0) { toast('Isi nominal DP, atau pilih Lunas di awal.'); return; }
+  if (mode === 'Tempo' && dp >= price) mode = 'Lunas';
+  const orderDate = $('fOrderDate').value, deadline = $('fDeadline').value;
+
+  // Nama kontak WhatsApp: disalin dulu selagi tombol masih dalam gestur klik
+  const suggested = `IJS Buy ${name} ${item} ${fmtLong(orderDate)}`;
+  let copied = false;
+  try { await navigator.clipboard.writeText(suggested); copied = true; } catch (_) {}
+
+  const btn = $('saveBtn');
+  btn.disabled = true; btn.textContent = 'Menyimpan…';
+  const payload = { orderId: editId, name, phone: $('fPhone').value, item, price, orderDate, deadline, paymentMode: mode, dpAmount: dp };
+  try {
+    const r = await apiPost(editId ? 'edit_order' : 'add_order', payload);
+    const data = {
+      phone: cleanPhone(payload.phone), name, item, price, orderDate, deadline,
+      paymentMode: mode, dpAmount: dp, payStatus: mode === 'Lunas' ? 'Lunas' : 'DP'
+    };
+    if (editId) {
+      const o = orders.find(x => x.id === editId);
+      if (o) Object.assign(o, data);
+    } else {
+      orders.push(normalize(Object.assign({ id: r.orderId, status: 'Pending' }, data)));
     }
-    autoLogin();
+    commit();
+    $('orderDlg').close();
+    toast(copied ? `Tersimpan. Nama kontak WA tersalin: ${suggested}` : `Tersimpan. Nama kontak WA: ${suggested}`);
+  } catch (err) {
+    toast('Gagal menyimpan. Cek koneksi lalu coba lagi.');
+    loadData(true).catch(() => {});
+  } finally {
+    btn.disabled = false; btn.textContent = 'Simpan';
+  }
+});
 
-    function logout() {
-      localStorage.removeItem('ijs_auth');
-      location.reload();
-    }
+/* ---------- Laporan pendapatan (teks sederhana) ---------- */
+function buildReport(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  const list = orders.filter(o => (o.orderDate || '').startsWith(ym))
+    .sort((a, b) => a.orderDate.localeCompare(b.orderDate));
+  let received = 0, total = 0, fromLunas = 0, fromDp = 0;
+  list.forEach(o => {
+    const p = paidOf(o); received += p; total += o.price;
+    if (isLunas(o)) fromLunas += p; else fromDp += p;
+  });
+  const L = [];
+  L.push('LAPORAN PENDAPATAN - IJS JOKI', `Periode : ${MONTHS[m - 1]} ${y}`, `Dicetak : ${fmtLong(today())}`, '');
+  L.push(`Pendapatan masuk   : ${rp(received)}`);
+  L.push(`  dari order lunas : ${rp(fromLunas)}`);
+  L.push(`  dari DP          : ${rp(fromDp)}`);
+  L.push(`Belum dibayar      : ${rp(total - received)}`);
+  L.push(`Total nilai order  : ${rp(total)}`);
+  L.push(`Jumlah order       : ${list.length}`, '', 'Rincian order');
+  if (!list.length) L.push('(tidak ada order pada bulan ini)');
+  list.forEach((o, i) => {
+    const st = isLunas(o) ? 'Lunas' : `DP ${rp(paidOf(o))}, sisa ${rp(dueOf(o))}`;
+    L.push(`${i + 1}. ${fmtD(o.orderDate)} | ${o.name} | ${o.item} | ${rp(o.price)} | ${st}`);
+  });
+  return L.join('\n');
+}
 
-    function cleanPhoneFormat(phoneStr) {
-      if (!phoneStr || phoneStr === '-') return "-";
-      let cleaned = phoneStr.toString().replace(/\D/g, '');
-      if (cleaned.startsWith('0')) cleaned = '62' + cleaned.slice(1);
-      if (cleaned.startsWith('620')) cleaned = '62' + cleaned.slice(3);
-      if (cleaned.startsWith('62628')) cleaned = cleaned.slice(2);
-      return cleaned;
-    }
+function updateReport() {
+  const ym = $('repMonth').value;
+  $('reportText').textContent = /^\d{4}-\d{2}$/.test(ym) ? buildReport(ym) : 'Pilih bulan dengan format 2026-10.';
+}
+$('reportBtn').addEventListener('click', () => {
+  $('repMonth').value = `${stat.y}-${pad(stat.m + 1)}`;
+  updateReport();
+  $('reportDlg').showModal();
+});
+$('repMonth').addEventListener('input', updateReport);
+$('copyReport').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('reportText').textContent); toast('Laporan tersalin.'); }
+  catch (_) { toast('Tidak bisa menyalin. Salin manual dari kotak laporan.'); }
+});
+$('printReport').addEventListener('click', () => {
+  $('printArea').textContent = $('reportText').textContent;
+  const old = document.title;
+  document.title = `Laporan-Pendapatan-${$('repMonth').value}`;
+  window.addEventListener('afterprint', () => { document.title = old; }, { once: true });
+  window.print();
+});
 
-    function handlePaymentModeChange() {
-      const mode = document.getElementById('paymentMode').value;
-      const dpContainer = document.getElementById('dpContainer');
-      if (mode === 'Tempo') {
-        dpContainer.classList.remove('hidden');
-      } else {
-        dpContainer.classList.add('hidden');
-        document.getElementById('dpAmount').value = "";
-      }
-    }
+/* ---------- Umum ---------- */
+document.querySelectorAll('dialog').forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
+$('logoutBtn').addEventListener('click', logout);
+$('syncBtn').addEventListener('click', async () => {
+  const b = $('syncBtn');
+  b.disabled = true; b.textContent = 'Memuat…';
+  try { await loadData(true); toast('Data diperbarui.'); }
+  catch (err) { if (err.auth) logout(); else toast('Tidak bisa terhubung ke Google Sheets.'); }
+  finally { b.disabled = false; b.textContent = 'Muat ulang'; }
+});
 
-    document.getElementById('orderDate').valueAsDate = new Date();
-
-    function setTabFilter(tab) {
-      activeTab = tab;
-      const tabPending = document.getElementById('tabPending');
-      const tabDone = document.getElementById('tabDone');
-      const tabAll = document.getElementById('tabAll');
-
-      [tabPending, tabDone, tabAll].forEach(btn => {
-        btn.className = "px-3.5 py-1.5 rounded-lg transition text-slate-400 hover:text-white";
-      });
-
-      if (tab === 'Pending') {
-        tabPending.className = "px-3.5 py-1.5 rounded-lg transition text-amber-400 bg-slate-800 border border-slate-700";
-      } else if (tab === 'Selesai') {
-        tabDone.className = "px-3.5 py-1.5 rounded-lg transition text-emerald-400 bg-slate-800 border border-slate-700";
-      } else {
-        tabAll.className = "px-3.5 py-1.5 rounded-lg transition text-indigo-400 bg-slate-800 border border-slate-700";
-      }
-
-      renderTableAndStats();
-    }
-
-    function openModal(mode, orderId = null) {
-      document.getElementById('orderModal').classList.remove('hidden');
-      document.getElementById('orderModal').classList.add('flex');
-      
-      if (mode === 'add') {
-        document.getElementById('modalTitle').innerText = "Input Order Baru";
-        document.getElementById('editOrderId').value = "";
-        document.getElementById('orderForm').reset();
-        document.getElementById('orderDate').valueAsDate = new Date();
-        handlePaymentModeChange();
-      } else if (mode === 'edit') {
-        document.getElementById('modalTitle').innerText = "Edit Data Transaksi";
-        const ord = globalOrders.find(o => o.id === orderId);
-        if (ord) {
-          document.getElementById('editOrderId').value = ord.id;
-          document.getElementById('type').value = ord.type;
-          document.getElementById('clientName').value = ord.name;
-          document.getElementById('phone').value = ord.phone;
-          document.getElementById('item').value = ord.item;
-          document.getElementById('price').value = ord.price;
-          document.getElementById('paymentMode').value = ord.paymentMode || 'Lunas';
-          document.getElementById('dpAmount').value = ord.dpAmount || '';
-          document.getElementById('orderDate').value = ord.orderDate;
-          document.getElementById('deadline').value = ord.deadline;
-          handlePaymentModeChange();
-        }
-      }
-    }
-
-    function closeModal() {
-      document.getElementById('orderModal').classList.add('hidden');
-      document.getElementById('orderModal').classList.remove('flex');
-    }
-
-    async function loadData() {
-      try {
-        const res = await fetch(GAS_URL);
-        const result = await res.json();
-        
-        if (result.status === "success") {
-          globalOrders = result.data || [];
-          renderTableAndStats();
-          renderCalendar();
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    function renderTableAndStats() {
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
-      
-      let monthCount = 0;
-      let monthRevenue = 0;
-      let buyCount = 0;
-      let askCount = 0;
-      let pendingCount = 0;
-      let doneCount = 0;
-
-      globalOrders.forEach(ord => {
-        const ordDate = new Date(ord.orderDate);
-        if (ordDate.getMonth() === currentMonth && ordDate.getFullYear() === currentYear) {
-          monthCount++;
-          if(ord.type === "Buy") monthRevenue += Number(ord.price || 0);
-        }
-
-        if (ord.type === "Buy") buyCount++;
-        if (ord.type === "Ask") askCount++;
-        
-        const st = (ord.status || '').toLowerCase();
-        if (st === 'selesai' || st === 'done') {
-          doneCount++;
-        } else {
-          pendingCount++;
-        }
-      });
-
-      document.getElementById('countTabPending').innerText = pendingCount;
-      document.getElementById('countTabDone').innerText = doneCount;
-      document.getElementById('countTabAll').innerText = globalOrders.length;
-
-      let filteredOrders = [...globalOrders];
-      if (activeTab === 'Pending') {
-        filteredOrders = globalOrders.filter(o => (o.status || '').toLowerCase() !== 'selesai' && (o.status || '').toLowerCase() !== 'done');
-      } else if (activeTab === 'Selesai') {
-        filteredOrders = globalOrders.filter(o => (o.status || '').toLowerCase() === 'selesai' || (o.status || '').toLowerCase() === 'done');
-      }
-
-      const tbody = document.getElementById('order-rows');
-      tbody.innerHTML = '';
-
-      if (filteredOrders.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-500">Tidak ada data orderan (${activeTab}).</td></tr>`;
-      } else {
-        filteredOrders.reverse().forEach(ord => {
-          const formattedPhone = cleanPhoneFormat(ord.phone);
-          const isWorkDone = (ord.status || '').toLowerCase() === 'selesai' || (ord.status || '').toLowerCase() === 'done';
-          const isPaidLunas = (ord.payStatus || '').toLowerCase() === 'lunas' || ord.paymentMode === 'Lunas';
-          
-          const workBadge = isWorkDone 
-            ? `<span class="px-2.5 py-1 rounded-lg text-xs border font-medium bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Selesai</span>` 
-            : `<span class="px-2.5 py-1 rounded-lg text-xs border font-medium bg-amber-500/10 text-amber-400 border-amber-500/20">Pending</span>`;
-
-          const payBadge = isPaidLunas
-            ? `<span class="px-2 py-0.5 rounded text-xs bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">Lunas</span>`
-            : `<span class="px-2 py-0.5 rounded text-xs bg-red-500/20 text-red-300 font-semibold border border-red-500/30">${ord.payStatus}</span>`;
-
-          const toggleWorkBtn = isWorkDone
-            ? `<button onclick="toggleStatus('${ord.id}', 'Pending')" title="Kembalikan Pekerjaan ke Pending" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 px-2 py-1 rounded-lg text-xs border border-amber-500/30 transition flex items-center gap-1"><i class="fa-solid fa-rotate-left"></i> Job Pending</button>`
-            : `<button onclick="toggleStatus('${ord.id}', 'Selesai')" title="Tandai Pekerjaan Selesai" class="bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 px-2 py-1 rounded-lg text-xs border border-emerald-500/30 transition flex items-center gap-1"><i class="fa-solid fa-check"></i> Job Selesai</button>`;
-
-          const togglePayBtn = !isPaidLunas
-            ? `<button onclick="markAsLunas('${ord.id}')" title="Tandai Sudah Lunas" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 px-2 py-1 rounded-lg text-xs border border-blue-500/30 transition flex items-center gap-1"><i class="fa-solid fa-money-bill-wave"></i> Set Lunas</button>`
-            : ``;
-
-          tbody.innerHTML += `
-            <tr class="hover:bg-slate-700/20 transition border-b border-slate-700/40">
-              <td class="p-4 font-semibold text-white">${ord.name}</td>
-              <td class="p-4 text-slate-400 font-mono text-xs">
-                ${formattedPhone} 
-                ${formattedPhone !== '-' ? `<a href="https://wa.me/${formattedPhone}" target="_blank" class="text-emerald-400 hover:text-emerald-300 ml-1.5 no-print"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
-              </td>
-              <td class="p-4">${ord.item}</td>
-              <td class="p-4">
-                <span class="text-emerald-400 font-medium block">Rp ${Number(ord.price).toLocaleString('id-ID')}</span>
-                ${ord.dpAmount ? `<span class="text-xs text-slate-400">DP: Rp ${Number(ord.dpAmount).toLocaleString('id-ID')}</span>` : ''}
-              </td>
-              <td class="p-4">${payBadge}</td>
-              <td class="p-4 text-amber-400 font-medium">${ord.deadline}</td>
-              <td class="p-4">${workBadge}</td>
-              <td class="p-4 text-center no-print">
-                <div class="flex items-center justify-center gap-1">
-                  ${toggleWorkBtn}
-                  ${togglePayBtn}
-                  <button onclick="openModal('edit', '${ord.id}')" title="Edit Data" class="bg-slate-700 hover:bg-slate-600 text-blue-400 px-2 py-1 rounded-lg text-xs transition">
-                    <i class="fa-solid fa-pen"></i>
-                  </button>
-                  <button onclick="deleteOrder('${ord.id}')" title="Hapus Data" class="bg-slate-700 hover:bg-slate-600 text-red-400 px-2 py-1 rounded-lg text-xs transition">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          `;
-        });
-      }
-
-      document.getElementById('total-revenue').innerText = `Rp ${monthRevenue.toLocaleString('id-ID')}`;
-      document.getElementById('month-orders').innerText = monthCount;
-      document.getElementById('total-cust').innerText = globalOrders.length;
-      document.getElementById('total-buy').innerText = buyCount;
-      document.getElementById('total-ask').innerText = askCount;
-      document.getElementById('total-pending').innerText = pendingCount;
-      document.getElementById('total-done').innerText = doneCount;
-    }
-
-    // --- KALENDER DEADLINE ---
-    function renderCalendar() {
-      const year = currentCalendarDate.getFullYear();
-      const month = currentCalendarDate.getMonth();
-      const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-      document.getElementById('calendarMonthTitle').innerText = `${monthNames[month]} ${year}`;
-
-      const firstDay = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const today = new Date();
-      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-      const pendingDeadlines = globalOrders
-        .filter(o => (o.status || '').toLowerCase() !== 'selesai' && (o.status || '').toLowerCase() !== 'done' && o.deadline)
-        .map(o => o.deadline);
-
-      const grid = document.getElementById('calendarGrid');
-      grid.innerHTML = '';
-
-      for (let i = 0; i < firstDay; i++) {
-        grid.innerHTML += `<div></div>`;
-      }
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const isToday = (dateStr === todayStr);
-        const hasDeadline = pendingDeadlines.includes(dateStr);
-
-        let cellClass = "p-2 rounded-xl text-center cursor-pointer transition relative flex flex-col items-center justify-center h-10 ";
-        
-        if (hasDeadline) {
-          cellClass += "bg-amber-400 text-slate-900 font-extrabold shadow-md shadow-amber-500/20 rounded-full animate-pulse ";
-        } else if (isToday) {
-          cellClass += "border-2 border-indigo-500 text-indigo-400 font-bold ";
-        } else {
-          cellClass += "hover:bg-slate-700/50 text-slate-300 ";
-        }
-
-        grid.innerHTML += `
-          <div onclick="selectCalendarDate('${dateStr}')" class="${cellClass}">
-            <span>${day}</span>
-          </div>
-        `;
-      }
-    }
-
-    function changeMonth(delta) {
-      currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
-      renderCalendar();
-    }
-
-    function selectCalendarDate(dateStr) {
-      const formattedDate = new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-      document.getElementById('selectedDateBadge').innerText = formattedDate;
-
-      const matchingOrders = globalOrders.filter(o => o.deadline === dateStr);
-      const container = document.getElementById('deadlineDetailContainer');
-      container.innerHTML = '';
-
-      if (matchingOrders.length === 0) {
-        container.innerHTML = `<p class="text-slate-500 text-xs text-center py-8">Tidak ada deadline orderan pada tanggal ini.</p>`;
-        return;
-      }
-
-      matchingOrders.forEach(ord => {
-        const formattedPhone = cleanPhoneFormat(ord.phone);
-        const isDone = (ord.status || '').toLowerCase() === 'selesai' || (ord.status || '').toLowerCase() === 'done';
-        
-        const statusBadge = isDone 
-          ? `<span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30 font-semibold">Selesai</span>` 
-          : `<span class="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/30 font-semibold">Pending</span>`;
-
-        container.innerHTML += `
-          <div class="bg-slate-900/80 border border-slate-700/60 p-3.5 rounded-xl space-y-1.5">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-white text-sm">${ord.name}</span>
-              ${statusBadge}
-            </div>
-            <p class="text-xs text-slate-300"><i class="fa-solid fa-box text-indigo-400 mr-1"></i> ${ord.item}</p>
-            <div class="flex items-center justify-between pt-1 border-t border-slate-800 text-xs">
-              <span class="text-emerald-400 font-semibold">Rp ${Number(ord.price).toLocaleString('id-ID')}</span>
-              ${formattedPhone !== '-' ? `<a href="https://wa.me/${formattedPhone}" target="_blank" class="text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1"><i class="fa-brands fa-whatsapp"></i> Chat WA</a>` : ''}
-            </div>
-          </div>
-        `;
-      });
-    }
-
-    // UPDATE PEKERJAAN
-    function toggleStatus(orderId, targetStatus) {
-      const ord = globalOrders.find(o => o.id === orderId);
-      if(!ord) return;
-      
-      ord.status = targetStatus;
-      renderTableAndStats();
-      renderCalendar();
-
-      fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({ action: "update_status", orderId: orderId, newStatus: targetStatus })
-      });
-    }
-
-    // UPDATE PELUNASAN PEMBAYARAN
-    function markAsLunas(orderId) {
-      const ord = globalOrders.find(o => o.id === orderId);
-      if(!ord) return;
-      if(!confirm("Set pembayaran order ini menjadi LUNAS?")) return;
-
-      ord.paymentMode = "Lunas";
-      ord.payStatus = "Lunas";
-      renderTableAndStats();
-
-      fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({ action: "update_payment", orderId: orderId })
-      });
-    }
-
-    // DELETE ORDER
-    function deleteOrder(orderId) {
-      if (!confirm("⚠️ Yakin ingin menghapus data order ini?")) return;
-
-      globalOrders = globalOrders.filter(o => o.id !== orderId);
-      renderTableAndStats();
-      renderCalendar();
-
-      fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({ action: "delete_order", orderId: orderId })
-      });
-    }
-
-    // SUBMIT FORM (CREATE / EDIT)
-    async function submitForm(e) {
-      e.preventDefault();
-      const btn = document.getElementById('submitBtn');
-      btn.innerText = "Menyimpan...";
-      btn.disabled = true;
-
-      const editId = document.getElementById('editOrderId').value;
-      const type = document.getElementById('type').value;
-      const name = document.getElementById('clientName').value;
-      const phone = document.getElementById('phone').value;
-      const item = document.getElementById('item').value;
-      const price = document.getElementById('price').value;
-      const paymentMode = document.getElementById('paymentMode').value;
-      const dpAmount = document.getElementById('dpAmount').value;
-      const orderDateVal = document.getElementById('orderDate').value;
-      const deadlineVal = document.getElementById('deadline').value;
-
-      const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-      const d = new Date(orderDateVal);
-      const formattedDate = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-      const suggestedName = `IJS ${type} ${name} ${item} ${formattedDate}`;
-
-      const actionType = editId ? "edit_order" : "add_order";
-
-      const payload = {
-        action: actionType,
-        orderId: editId,
-        type: type,
-        name: name,
-        phone: phone,
-        item: item,
-        price: price,
-        paymentMode: paymentMode,
-        dpAmount: dpAmount,
-        orderDate: orderDateVal,
-        deadline: deadlineVal
-      };
-
-      try {
-        await fetch(GAS_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(payload)
-        });
-
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          try { await navigator.clipboard.writeText(suggestedName); } catch (cErr) {}
-        }
-
-        alert(`✅ Data Berhasil Disimpan!\n\nSaran Nama Kontak WA:\n${suggestedName}\n\n(Telah tersalin otomatis ke clipboard!)`);
-        
-        closeModal();
-        setTimeout(loadData, 1000);
-
-      } catch (err) {
-        alert("❌ Gagal menyimpan data.");
-      } finally {
-        btn.innerText = "Simpan Data & Copy Rename WA";
-        btn.disabled = false;
-      }
-    }
-  </script>
+/* ---------- Mulai ---------- */
+if (key) {
+  const cached = store.get('ijs_orders');
+  if (cached) { try { orders = JSON.parse(cached).map(normalize); } catch (_) {} }
+  showApp();
+  renderAll();
+  loadData(false).catch(err => {
+    if (err.auth) logout(); else toast('Offline. Menampilkan data terakhir.');
+  });
+} else {
+  showLogin();
+}
+})();
+</script>
 </body>
 </html>
