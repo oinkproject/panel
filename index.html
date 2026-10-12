@@ -16,7 +16,7 @@
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-button,input{font:inherit;color:inherit}
+button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 a{color:inherit}
 .hidden{display:none!important}
@@ -101,7 +101,7 @@ a{color:inherit}
 .dow,.cal{display:grid;grid-template-columns:repeat(7,1fr);text-align:center}
 .dow{font-size:12px;color:var(--muted);margin-bottom:2px}
 .cal{gap:2px}
-.day{border:0;background:transparent;height:36px;border-radius:9px;position:relative;font-size:14px}
+.day{border:0;background:transparent;height:36px;border-radius:99px;position:relative;font-size:14px}
 .day:hover{background:var(--surface2)}
 .day.today{box-shadow:inset 0 0 0 1.5px var(--primary)}
 .day.has::after,.day.late::after{content:"";position:absolute;left:50%;bottom:4px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--warn)}
@@ -230,7 +230,13 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   <form id="orderForm" class="dlg" autocomplete="off">
     <h3 id="orderTitle">Order baru</h3>
     <input type="hidden" id="editId">
-    <label class="field"><span>Nama client</span><input id="fName" class="input" required placeholder="Contoh: Kiera"></label>
+    
+    <label class="field">
+      <span>Nama client (Pilih / Tulis Baru)</span>
+      <input id="fName" class="input" required list="customerList" placeholder="Ketik nama atau pilih customer lama..." autocomplete="off">
+      <datalist id="customerList"></datalist>
+    </label>
+
     <label class="field"><span>Nomor WhatsApp</span><input id="fPhone" class="input" required inputmode="tel" placeholder="081234567890"></label>
     <label class="field"><span>Item / jasa</span><input id="fItem" class="input" required placeholder="Contoh: Logo"></label>
     <div class="field"><span>Pembayaran</span></div>
@@ -370,10 +376,34 @@ let tab = 'pending', query = '', limit = 40;
 let stat = { y: now.getFullYear(), m: now.getMonth() };
 let cal = { y: now.getFullYear(), m: now.getMonth() };
 let selDate = null;
+let customerMap = {};
 
 function commit() {
   store.set('ijs_orders', JSON.stringify(orders));
+  buildCustomerMap();
   renderAll();
+}
+
+function buildCustomerMap() {
+  customerMap = {};
+  const datalist = $('customerList');
+  datalist.innerHTML = '';
+  
+  orders.forEach(o => {
+    if (o.name && o.phone && o.phone !== '-') {
+      customerMap[o.name.toLowerCase()] = o.phone;
+    }
+  });
+
+  const uniqueNames = Object.keys(customerMap);
+  uniqueNames.sort();
+  
+  uniqueNames.forEach(lowerName => {
+    const originalName = orders.find(o => o.name.toLowerCase() === lowerName)?.name || lowerName;
+    const opt = document.createElement('option');
+    opt.value = originalName;
+    datalist.appendChild(opt);
+  });
 }
 
 /* ---------- API ---------- */
@@ -428,6 +458,14 @@ $('loginForm').addEventListener('submit', async e => {
     errBox.textContent = err.auth ? 'Password salah.' : 'Tidak bisa terhubung. Periksa koneksi lalu coba lagi.';
   } finally {
     btn.disabled = false; btn.textContent = 'Buka dashboard';
+  }
+});
+
+/* ---------- Auto-Fill Phone on Customer Select ---------- */
+$('fName').addEventListener('input', e => {
+  const inputName = e.target.value.trim().toLowerCase();
+  if (customerMap[inputName]) {
+    $('fPhone').value = customerMap[inputName];
   }
 });
 
@@ -732,7 +770,7 @@ $('logoutBtn').addEventListener('click', logout);$('syncBtn').addEventListener('
 /* ---------- Mulai ---------- */
 if (key) {
   const cached = store.get('ijs_orders');
-  if (cached) { try { orders = JSON.parse(cached).map(normalize); } catch (_) {} }
+  if (cached) { try { orders = JSON.parse(cached).map(normalize); buildCustomerMap(); } catch (_) {} }
   showApp();
   renderAll();
   loadData(false).catch(err => {
