@@ -109,12 +109,10 @@
           </div>
         </div>
 
-        <!-- Grid Nama Hari -->
         <div class="grid grid-cols-7 text-center text-xs font-bold text-slate-400 mb-2">
           <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
         </div>
 
-        <!-- Grid Tanggal -->
         <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
         
         <div class="flex items-center gap-4 mt-4 text-xs text-slate-400 pt-3 border-t border-slate-700/50">
@@ -147,16 +145,27 @@
 
     </div>
 
-    <!-- Table Orders -->
+    <!-- TABLE ORDERS WITH TAB FILTER -->
     <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl shadow-xl overflow-hidden">
-      <div class="p-5 border-b border-slate-700/60 flex items-center justify-between">
+      <div class="p-5 border-b border-slate-700/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h2 class="font-bold text-slate-200 text-lg flex items-center gap-2">
-          <i class="fa-solid fa-list-check text-indigo-400"></i> Daftar Transaksi & Leads
+          <i class="fa-solid fa-list-check text-indigo-400"></i> Daftar Transaksi
         </h2>
-        <button onclick="loadData()" class="text-slate-400 hover:text-white transition bg-slate-700/50 p-2 rounded-lg">
-          <i class="fa-solid fa-rotate-right"></i>
-        </button>
+        
+        <!-- Filter Tabs (Pending / Done / All) -->
+        <div class="flex items-center bg-slate-900/80 p-1 rounded-xl border border-slate-700/60 text-xs font-semibold">
+          <button onclick="setTabFilter('Pending')" id="tabPending" class="px-3.5 py-1.5 rounded-lg transition text-amber-400 bg-slate-800 border border-slate-700">
+            ⏳ Pending (<span id="countTabPending">0</span>)
+          </button>
+          <button onclick="setTabFilter('Selesai')" id="tabDone" class="px-3.5 py-1.5 rounded-lg transition text-slate-400 hover:text-emerald-400">
+            ✅ Selesai (<span id="countTabDone">0</span>)
+          </button>
+          <button onclick="setTabFilter('All')" id="tabAll" class="px-3.5 py-1.5 rounded-lg transition text-slate-400 hover:text-white">
+            Semua (<span id="countTabAll">0</span>)
+          </button>
+        </div>
       </div>
+
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse text-sm">
           <thead>
@@ -168,7 +177,7 @@
               <th class="p-4">Deadline</th>
               <th class="p-4">Type</th>
               <th class="p-4">Status</th>
-              <th class="p-4 text-center">Aksi CRUD</th>
+              <th class="p-4 text-center">Aksi</th>
             </tr>
           </thead>
           <tbody id="order-rows" class="divide-y divide-slate-700/40 text-slate-300">
@@ -243,6 +252,7 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxJ0qOZNoYGq99cRSnrhvki8OHxLwNhgQvIWhU1TwzSLpTx3xWjC8YcuYtsjTjtLg4/exec";
     const PASS_KEY = "ikmalsayang";
     let globalOrders = [];
+    let activeTab = "Pending";
     let currentCalendarDate = new Date();
 
     // Login System
@@ -283,6 +293,28 @@
     }
 
     document.getElementById('orderDate').valueAsDate = new Date();
+
+    function setTabFilter(tab) {
+      activeTab = tab;
+      
+      const tabPending = document.getElementById('tabPending');
+      const tabDone = document.getElementById('tabDone');
+      const tabAll = document.getElementById('tabAll');
+
+      [tabPending, tabDone, tabAll].forEach(btn => {
+        btn.className = "px-3.5 py-1.5 rounded-lg transition text-slate-400 hover:text-white";
+      });
+
+      if (tab === 'Pending') {
+        tabPending.className = "px-3.5 py-1.5 rounded-lg transition text-amber-400 bg-slate-800 border border-slate-700";
+      } else if (tab === 'Selesai') {
+        tabDone.className = "px-3.5 py-1.5 rounded-lg transition text-emerald-400 bg-slate-800 border border-slate-700";
+      } else {
+        tabAll.className = "px-3.5 py-1.5 rounded-lg transition text-indigo-400 bg-slate-800 border border-slate-700";
+      }
+
+      renderTableAndStats();
+    }
 
     function openModal(mode, orderId = null) {
       document.getElementById('orderModal').classList.remove('hidden');
@@ -340,18 +372,8 @@
       let pendingCount = 0;
       let doneCount = 0;
 
-      const tbody = document.getElementById('order-rows');
-      tbody.innerHTML = '';
-
-      if (globalOrders.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-500">Belum ada data transaksi.</td></tr>`;
-        return;
-      }
-
-      [...globalOrders].reverse().forEach(ord => {
+      globalOrders.forEach(ord => {
         const ordDate = new Date(ord.orderDate);
-        const formattedPhone = cleanPhoneFormat(ord.phone);
-        
         if (ordDate.getMonth() === currentMonth && ordDate.getFullYear() === currentYear) {
           monthCount++;
           if(ord.type === "Buy") monthRevenue += Number(ord.price || 0);
@@ -359,45 +381,73 @@
 
         if (ord.type === "Buy") buyCount++;
         if (ord.type === "Ask") askCount++;
-        if (ord.status === "Pending") pendingCount++;
-        if (ord.status === "Selesai") doneCount++;
-
-        const statusClass = ord.status === "Selesai" 
-          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
-          : "bg-amber-500/10 text-amber-400 border-amber-500/20";
-
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-700/20 transition border-b border-slate-700/40">
-            <td class="p-4 font-semibold text-white">${ord.name}</td>
-            <td class="p-4 text-slate-400 font-mono text-xs">
-              ${formattedPhone} 
-              ${formattedPhone !== '-' ? `<a href="https://wa.me/${formattedPhone}" target="_blank" class="text-emerald-400 hover:text-emerald-300 ml-1.5"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
-            </td>
-            <td class="p-4">${ord.item}</td>
-            <td class="p-4 text-emerald-400 font-medium">Rp ${Number(ord.price).toLocaleString('id-ID')}</td>
-            <td class="p-4 text-amber-400 font-medium">${ord.deadline}</td>
-            <td class="p-4"><span class="text-xs px-2 py-0.5 rounded ${ord.type === 'Buy' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-700 text-slate-300'}">${ord.type}</span></td>
-            <td class="p-4">
-              <span class="px-2.5 py-1 rounded-lg text-xs border font-medium ${statusClass}">
-                ${ord.status}
-              </span>
-            </td>
-            <td class="p-4 text-center">
-              <div class="flex items-center justify-center gap-1.5">
-                <button onclick="toggleStatus('${ord.id}')" title="Ubah Status" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1.5 rounded-lg text-xs transition">
-                  <i class="fa-solid fa-sync"></i>
-                </button>
-                <button onclick="openModal('edit', '${ord.id}')" title="Edit Data" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-2.5 py-1.5 rounded-lg text-xs border border-blue-500/30 transition">
-                  <i class="fa-solid fa-pen"></i>
-                </button>
-                <button onclick="deleteOrder('${ord.id}')" title="Hapus Data" class="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-2.5 py-1.5 rounded-lg text-xs border border-red-500/30 transition">
-                  <i class="fa-solid fa-trash"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
+        
+        // Cek status fleksibel (case-insensitive)
+        const st = (ord.status || '').toLowerCase();
+        if (st === 'selesai' || st === 'done') {
+          doneCount++;
+        } else {
+          pendingCount++;
+        }
       });
+
+      document.getElementById('countTabPending').innerText = pendingCount;
+      document.getElementById('countTabDone').innerText = doneCount;
+      document.getElementById('countTabAll').innerText = globalOrders.length;
+
+      // Filter Data Berdasarkan Tab Aktif
+      let filteredOrders = [...globalOrders];
+      if (activeTab === 'Pending') {
+        filteredOrders = globalOrders.filter(o => (o.status || '').toLowerCase() !== 'selesai' && (o.status || '').toLowerCase() !== 'done');
+      } else if (activeTab === 'Selesai') {
+        filteredOrders = globalOrders.filter(o => (o.status || '').toLowerCase() === 'selesai' || (o.status || '').toLowerCase() === 'done');
+      }
+
+      const tbody = document.getElementById('order-rows');
+      tbody.innerHTML = '';
+
+      if (filteredOrders.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-500">Tidak ada data orderan (${activeTab}).</td></tr>`;
+      } else {
+        filteredOrders.reverse().forEach(ord => {
+          const formattedPhone = cleanPhoneFormat(ord.phone);
+          const isDone = (ord.status || '').toLowerCase() === 'selesai' || (ord.status || '').toLowerCase() === 'done';
+          
+          const statusBadge = isDone 
+            ? `<span class="px-2.5 py-1 rounded-lg text-xs border font-medium bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Selesai</span>` 
+            : `<span class="px-2.5 py-1 rounded-lg text-xs border font-medium bg-amber-500/10 text-amber-400 border-amber-500/20">Pending</span>`;
+
+          const toggleBtn = isDone
+            ? `<button onclick="toggleStatus('${ord.id}', 'Pending')" title="Kembalikan ke Pending" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 px-2.5 py-1.5 rounded-lg text-xs border border-amber-500/30 transition flex items-center gap-1"><i class="fa-solid fa-rotate-left"></i> Set Pending</button>`
+            : `<button onclick="toggleStatus('${ord.id}', 'Selesai')" title="Tandai Pekerjaan Selesai" class="bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 px-2.5 py-1.5 rounded-lg text-xs border border-emerald-500/30 transition flex items-center gap-1"><i class="fa-solid fa-check"></i> Set Selesai</button>`;
+
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-700/20 transition border-b border-slate-700/40">
+              <td class="p-4 font-semibold text-white">${ord.name}</td>
+              <td class="p-4 text-slate-400 font-mono text-xs">
+                ${formattedPhone} 
+                ${formattedPhone !== '-' ? `<a href="https://wa.me/${formattedPhone}" target="_blank" class="text-emerald-400 hover:text-emerald-300 ml-1.5"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
+              </td>
+              <td class="p-4">${ord.item}</td>
+              <td class="p-4 text-emerald-400 font-medium">Rp ${Number(ord.price).toLocaleString('id-ID')}</td>
+              <td class="p-4 text-amber-400 font-medium">${ord.deadline}</td>
+              <td class="p-4"><span class="text-xs px-2 py-0.5 rounded ${ord.type === 'Buy' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-700 text-slate-300'}">${ord.type}</span></td>
+              <td class="p-4">${statusBadge}</td>
+              <td class="p-4 text-center">
+                <div class="flex items-center justify-center gap-1.5">
+                  ${toggleBtn}
+                  <button onclick="openModal('edit', '${ord.id}')" title="Edit Data" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-2.5 py-1.5 rounded-lg text-xs border border-blue-500/30 transition">
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <button onclick="deleteOrder('${ord.id}')" title="Hapus Data" class="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-2.5 py-1.5 rounded-lg text-xs border border-red-500/30 transition">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+      }
 
       document.getElementById('total-revenue').innerText = `Rp ${monthRevenue.toLocaleString('id-ID')}`;
       document.getElementById('month-orders').innerText = monthCount;
@@ -408,7 +458,7 @@
       document.getElementById('total-done').innerText = doneCount;
     }
 
-    // --- FITUR KALENDER DEADLINE & SIDEBAR ---
+    // --- KALENDER DEADLINE & SIDEBAR ---
     function renderCalendar() {
       const year = currentCalendarDate.getFullYear();
       const month = currentCalendarDate.getMonth();
@@ -424,13 +474,12 @@
 
       // Kumpulkan deadline pending
       const pendingDeadlines = globalOrders
-        .filter(o => o.status === "Pending" && o.deadline)
+        .filter(o => (o.status || '').toLowerCase() !== 'selesai' && (o.status || '').toLowerCase() !== 'done' && o.deadline)
         .map(o => o.deadline);
 
       const grid = document.getElementById('calendarGrid');
       grid.innerHTML = '';
 
-      // Spacer sel awal
       for (let i = 0; i < firstDay; i++) {
         grid.innerHTML += `<div></div>`;
       }
@@ -478,9 +527,11 @@
 
       matchingOrders.forEach(ord => {
         const formattedPhone = cleanPhoneFormat(ord.phone);
-        const statusBadge = ord.status === "Selesai" 
-          ? `<span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30">Selesai</span>` 
-          : `<span class="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/30">Pending</span>`;
+        const isDone = (ord.status || '').toLowerCase() === 'selesai' || (ord.status || '').toLowerCase() === 'done';
+        
+        const statusBadge = isDone 
+          ? `<span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30 font-semibold">Selesai</span>` 
+          : `<span class="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/30 font-semibold">Pending</span>`;
 
         container.innerHTML += `
           <div class="bg-slate-900/80 border border-slate-700/60 p-3.5 rounded-xl space-y-1.5">
@@ -498,21 +549,21 @@
       });
     }
 
-    // INSTANT OPTIMISTIC UPDATE STATUS
-    function toggleStatus(orderId) {
+    // INSTANT OPTIMISTIC UPDATE STATUS (PENDING <-> SELESAI)
+    function toggleStatus(orderId, targetStatus) {
       const ord = globalOrders.find(o => o.id === orderId);
       if(!ord) return;
       
-      const newStatus = ord.status === "Pending" ? "Selesai" : "Pending";
-      ord.status = newStatus;
+      ord.status = targetStatus; // Update status di memori lokal secara instan
       renderTableAndStats();
       renderCalendar();
 
+      // Kirim perubahan di latar belakang ke Google Sheets
       fetch(GAS_URL, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({ action: "update_status", orderId: orderId, newStatus: newStatus })
+        body: JSON.stringify({ action: "update_status", orderId: orderId, newStatus: targetStatus })
       });
     }
 
