@@ -336,8 +336,7 @@ function toast(msg) {
 
 function ask(msg, okText, danger) {
   return new Promise(resolve => {
-    const d = $('confirmDlg'), ok = $('confirmOk');
-    $('confirmMsg').textContent = msg;
+    const d = $('confirmDlg'), ok = $('confirmOk');$('confirmMsg').textContent = msg;
     ok.textContent = okText;
     ok.classList.toggle('danger-solid', !!danger);
     ok.classList.toggle('primary', !danger);
@@ -350,7 +349,11 @@ function ask(msg, okText, danger) {
 /* ---------- Model ---------- */
 const isDone = o => /^(selesai|done)$/i.test(o.status || '');
 const isLunas = o => /^lunas$/i.test(o.payStatus || '') || o.paymentMode === 'Lunas';
-const paidOf = o => isLunas(o) ? o.price : Math.min(o.dpAmount || 0, o.price);
+const paidOf = o => {
+  if (isLunas(o)) return o.price;
+  const dp = Number(o.dpAmount) || 0;
+  return dp > 0 ? Math.min(dp, o.price) : 0;
+};
 const dueOf = o => Math.max(0, o.price - paidOf(o));
 const normalize = o => ({
   id: String(o.id), phone: cleanPhone(o.phone), name: o.name || '', item: o.item || '',
@@ -394,7 +397,6 @@ async function apiPost(action, payload) {
   return r;
 }
 
-// Ubah tampilan dulu (terasa instan), lalu kirim ke server. Gagal -> muat ulang.
 async function mutate(action, payload, apply) {
   apply();
   commit();
@@ -407,13 +409,13 @@ async function mutate(action, payload, apply) {
 }
 
 /* ---------- Login ---------- */
-function showApp() { $('login').classList.add('hidden'); $('app').classList.remove('hidden'); }
-function showLogin() { $('app').classList.add('hidden'); $('login').classList.remove('hidden'); $('passInput').focus(); }
+function showApp() { $('login').classList.add('hidden');$('app').classList.remove('hidden'); }
+function showLogin() { $('app').classList.add('hidden'); $('login').classList.remove('hidden');$('passInput').focus(); }
 function logout() { store.del('ijs_key'); store.del('ijs_orders'); location.reload(); }
 
 $('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const btn = $('loginBtn'), errBox = $('loginErr');
+  const btn = $('loginBtn'), errBox =$('loginErr');
   errBox.textContent = '';
   btn.disabled = true; btn.textContent = 'Memeriksa…';
   key = $('passInput').value;
@@ -441,8 +443,7 @@ function renderStats() {
     due += dueOf(o);
   });
   $('statMonth').textContent = `${MONTHS[stat.m]} ${stat.y}`;
-  $('revenue').textContent = rp(received);
-  $('barFill').style.width = (total ? Math.round(received / total * 100) : 0) + '%';
+  $('revenue').textContent = rp(received);$('barFill').style.width = (total ? Math.round(received / total * 100) : 0) + '%';
   $('heroSub').textContent = count
     ? `Dari nilai order ${rp(total)} bulan ini. ${rp(total - received)} belum masuk.`
     : 'Belum ada order di bulan ini.';
@@ -542,8 +543,7 @@ function renderSide() {
     list = orders.filter(o => !isDone(o) && o.deadline)
       .sort((a, b) => a.deadline.localeCompare(b.deadline)).slice(0, 6);
   }
-  $('sideReset').classList.toggle('hidden', !selDate);
-  $('sideList').innerHTML = list.length
+  $('sideReset').classList.toggle('hidden', !selDate);$('sideList').innerHTML = list.length
     ? list.map(o => { const di = dueInfo(o); return `<div class="mini"><div><b>${esc(o.name)}</b><small>${esc(o.item)}</small></div><div class="due ${di.cls}">${esc(isDone(o) ? 'Selesai' : di.text.replace('Deadline ', ''))}</div></div>`; }).join('')
     : `<p class="empty" style="padding:14px 0">${selDate ? 'Tidak ada deadline di tanggal ini.' : 'Tidak ada pekerjaan yang menunggu.'}</p>`;
 }
@@ -597,53 +597,47 @@ $('calGrid').addEventListener('click', e => {
 });
 $('sideReset').addEventListener('click', () => { selDate = null; renderSide(); });
 const moveCal = d => { const x = new Date(cal.y, cal.m + d, 1); cal = { y: x.getFullYear(), m: x.getMonth() }; renderCalendar(); };
-$('calPrev').addEventListener('click', () => moveCal(-1));
-$('calNext').addEventListener('click', () => moveCal(1));
+$('calPrev').addEventListener('click', () => moveCal(-1));$('calNext').addEventListener('click', () => moveCal(1));
 const moveStat = d => { const x = new Date(stat.y, stat.m + d, 1); stat = { y: x.getFullYear(), m: x.getMonth() }; renderStats(); };
-$('prevMonth').addEventListener('click', () => moveStat(-1));
-$('nextMonth').addEventListener('click', () => moveStat(1));
+$('prevMonth').addEventListener('click', () => moveStat(-1));$('nextMonth').addEventListener('click', () => moveStat(1));
 
 /* ---------- Form order ---------- */
 const payMode = () => document.querySelector('input[name="pay"]:checked').value;
 function syncPayUI() {
   const dp = payMode() === 'Tempo';
-  $('dpField').classList.toggle('hidden', !dp);
-  $('fDp').required = dp;
+  $('dpField').classList.toggle('hidden', !dp);$('fDp').required = dp;
   if (!dp) $('fDp').value = '';
 }
 document.querySelectorAll('input[name="pay"]').forEach(r => r.addEventListener('change', syncPayUI));
-$('fOrderDate').addEventListener('change', e => { $('fDeadline').min = e.target.value; });
+$('fOrderDate').addEventListener('change', e => {$('fDeadline').min = e.target.value; });
 
 function openOrder(o) {
-  $('orderForm').reset();
-  $('editId').value = o ? o.id : '';
+  $('orderForm').reset();$('editId').value = o ? o.id : '';
   $('orderTitle').textContent = o ? 'Edit order' : 'Order baru';
   if (o) {
     $('fName').value = o.name; $('fPhone').value = o.phone === '-' ? '' : o.phone; $('fItem').value = o.item;
     $('fPrice').value = o.price; $('fDp').value = o.dpAmount || '';
     $('fOrderDate').value = o.orderDate; $('fDeadline').value = o.deadline;
-    (o.paymentMode === 'Tempo' ? $('payDp') : $('payLunas')).checked = true;
+    (o.paymentMode === 'Tempo' ? $('payDp') :$('payLunas')).checked = true;
   } else {
     $('fOrderDate').value = today();
   }
-  $('fDeadline').min = $('fOrderDate').value;
+  $('fDeadline').min =$('fOrderDate').value;
   syncPayUI();
-  $('orderDlg').showModal();
-  $('fName').focus();
+  $('orderDlg').showModal();$('fName').focus();
 }
 $('addBtn').addEventListener('click', () => openOrder(null));
 
 $('orderForm').addEventListener('submit', async e => {
   e.preventDefault();
   const editId = $('editId').value;
-  const name = $('fName').value.trim(), item = $('fItem').value.trim();
+  const name = $('fName').value.trim(), item =$('fItem').value.trim();
   const price = Number($('fPrice').value) || 0;
   let mode = payMode(), dp = mode === 'Tempo' ? (Number($('fDp').value) || 0) : 0;
   if (mode === 'Tempo' && dp <= 0) { toast('Isi nominal DP, atau pilih Lunas di awal.'); return; }
   if (mode === 'Tempo' && dp >= price) mode = 'Lunas';
-  const orderDate = $('fOrderDate').value, deadline = $('fDeadline').value;
+  const orderDate = $('fOrderDate').value, deadline =$('fDeadline').value;
 
-  // Nama kontak WhatsApp: disalin dulu selagi tombol masih dalam gestur klik
   const suggested = `IJS Buy ${name} ${item} ${fmtLong(orderDate)}`;
   let copied = false;
   try { await navigator.clipboard.writeText(suggested); copied = true; } catch (_) {}
@@ -704,18 +698,16 @@ function updateReport() {
   const ym = $('repMonth').value;
   $('reportText').textContent = /^\d{4}-\d{2}$/.test(ym) ? buildReport(ym) : 'Pilih bulan dengan format 2026-10.';
 }
-$('reportBtn').addEventListener('click', () => {
-  $('repMonth').value = `${stat.y}-${pad(stat.m + 1)}`;
+$('reportBtn').addEventListener('click', () => {$('repMonth').value = `${stat.y}-${pad(stat.m + 1)}`;
   updateReport();
   $('reportDlg').showModal();
 });
-$('repMonth').addEventListener('input', updateReport);
-$('copyReport').addEventListener('click', async () => {
+$('repMonth').addEventListener('input', updateReport);$('copyReport').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText($('reportText').textContent); toast('Laporan tersalin.'); }
   catch (_) { toast('Tidak bisa menyalin. Salin manual dari kotak laporan.'); }
 });
 $('printReport').addEventListener('click', () => {
-  $('printArea').textContent = $('reportText').textContent;
+  $('printArea').textContent =$('reportText').textContent;
   const old = document.title;
   document.title = `Laporan-Pendapatan-${$('repMonth').value}`;
   window.addEventListener('afterprint', () => { document.title = old; }, { once: true });
@@ -725,8 +717,7 @@ $('printReport').addEventListener('click', () => {
 /* ---------- Umum ---------- */
 document.querySelectorAll('dialog').forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
 document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
-$('logoutBtn').addEventListener('click', logout);
-$('syncBtn').addEventListener('click', async () => {
+$('logoutBtn').addEventListener('click', logout);$('syncBtn').addEventListener('click', async () => {
   const b = $('syncBtn');
   b.disabled = true; b.textContent = 'Memuat…';
   try { await loadData(true); toast('Data diperbarui.'); }
