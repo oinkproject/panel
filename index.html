@@ -1,438 +1,138 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IJS Joki - Executive Control Panel</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased pb-12">
+const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
 
-  <!-- PASSWORD MODAL (LOGIN) -->
-  <div id="loginModal" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
-      <div class="w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-indigo-500/30">
-        <i class="fa-solid fa-lock text-2xl"></i>
-      </div>
-      <h2 class="text-xl font-bold text-white mb-1">Akses Terkunci</h2>
-      <p class="text-slate-400 text-xs mb-6">Masukkan password untuk membuka IJS Pro Panel</p>
+function formatDateIndo(dateStr) {
+  if (!dateStr) return "";
+  const months = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ];
+  const d = new Date(dateStr);
+  const day = d.getDate();
+  const month = months[d.getMonth()];
+  const year = d.getFullYear();
+  return `${day} ${month} ${year}`;
+}
+
+function normalizePhone(phoneStr) {
+  if (!phoneStr || phoneStr === "-") return "-";
+  let cleaned = phoneStr.toString().replace(/\D/g, '');
+  if (cleaned.startsWith('0')) cleaned = '62' + cleaned.slice(1);
+  if (cleaned.startsWith('620')) cleaned = '62' + cleaned.slice(3);
+  if (cleaned.startsWith('62628')) cleaned = cleaned.slice(2);
+  return cleaned;
+}
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName("Orders");
+    
+    // 1. CREATE
+    if (data.action === "add_order") {
+      const orderId = "ORD-" + Utilities.formatDate(new Date(), "GMT+7", "yyyyMMdd-HHmmss");
+      const cleanPhone = normalizePhone(data.phone);
       
-      <form onsubmit="checkPassword(event)" class="space-y-4">
-        <input type="password" id="passInput" placeholder="Masukkan Password..." required class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-center focus:outline-none focus:border-indigo-500 text-sm tracking-widest">
-        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold p-3 rounded-xl transition shadow-lg text-sm">
-          Buka Dashboard
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- DASHBOARD WRAPPER -->
-  <div id="appDashboard" class="hidden max-w-7xl mx-auto p-4 md:p-8">
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-slate-800 pb-6">
-      <div>
-        <div class="flex items-center gap-2">
-          <span class="bg-indigo-500/20 text-indigo-400 text-xs font-bold px-2.5 py-1 rounded-md border border-indigo-500/30">PRO PANEL</span>
-          <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">IJS Joki Management</h1>
-        </div>
-        <p class="text-slate-400 text-sm mt-1">Overview performa bisnis, tracking leads, orderan, dan CRUD data customer.</p>
-      </div>
-      <div class="flex items-center gap-3">
-        <button onclick="openModal('add')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-5 py-2.5 rounded-xl shadow-lg transition flex items-center gap-2 text-sm">
-          <i class="fa-solid fa-plus"></i> Input Order Baru
-        </button>
-        <button onclick="logout()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2.5 rounded-xl border border-slate-700 transition">
-          <i class="fa-solid fa-right-from-bracket"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- Analytics Dashboard Grid -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-      <div class="col-span-2 bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
-        <div class="flex items-center justify-between">
-          <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Omset Bulan Ini</span>
-          <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-            <i class="fa-solid fa-wallet text-sm"></i>
-          </div>
-        </div>
-        <p id="total-revenue" class="text-2xl md:text-3xl font-black text-emerald-400 mt-2">Rp 0</p>
-      </div>
-
-      <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
-        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Order Bulan Ini</span>
-        <p id="month-orders" class="text-2xl font-black text-white mt-2">0</p>
-      </div>
-
-      <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
-        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total Leads/Cust</span>
-        <p id="total-cust" class="text-2xl font-black text-blue-400 mt-2">0</p>
-      </div>
-
-      <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
-        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Buy / Ask</span>
-        <div class="flex items-baseline gap-2 mt-2">
-          <span id="total-buy" class="text-2xl font-black text-indigo-400">0</span>
-          <span class="text-slate-500 font-bold">/</span>
-          <span id="total-ask" class="text-2xl font-black text-slate-400">0</span>
-        </div>
-      </div>
-
-      <div class="bg-slate-800/80 border border-slate-700/60 p-5 rounded-2xl shadow-xl">
-        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Pending / Done</span>
-        <div class="flex items-baseline gap-2 mt-2">
-          <span id="total-pending" class="text-2xl font-black text-amber-400">0</span>
-          <span class="text-slate-500 font-bold">/</span>
-          <span id="total-done" class="text-2xl font-black text-emerald-400">0</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Table Orders -->
-    <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl shadow-xl overflow-hidden">
-      <div class="p-5 border-b border-slate-700/60 flex items-center justify-between">
-        <h2 class="font-bold text-slate-200 text-lg flex items-center gap-2">
-          <i class="fa-solid fa-list-check text-indigo-400"></i> Daftar Transaksi & Leads
-        </h2>
-        <button onclick="loadData()" class="text-slate-400 hover:text-white transition bg-slate-700/50 p-2 rounded-lg">
-          <i class="fa-solid fa-rotate-right"></i>
-        </button>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse text-sm">
-          <thead>
-            <tr class="bg-slate-900/50 text-slate-400 border-b border-slate-700/60">
-              <th class="p-4">Customer</th>
-              <th class="p-4">No. WhatsApp</th>
-              <th class="p-4">Item Jasa</th>
-              <th class="p-4">Harga</th>
-              <th class="p-4">Deadline</th>
-              <th class="p-4">Type</th>
-              <th class="p-4">Status</th>
-              <th class="p-4 text-center">Aksi CRUD</th>
-            </tr>
-          </thead>
-          <tbody id="order-rows" class="divide-y divide-slate-700/40 text-slate-300">
-            <tr>
-              <td colspan="8" class="p-6 text-center text-slate-500">Memuat data...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL FORM INPUT & EDIT -->
-  <div id="orderModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-      <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
-        <i class="fa-solid fa-xmark text-xl"></i>
-      </button>
+      sheet.appendRow([
+        orderId,
+        cleanPhone,
+        data.name,
+        data.item,
+        Number(data.price),
+        data.orderDate,
+        data.deadline,
+        "Pending",
+        data.type || "Buy"
+      ]);
       
-      <h3 id="modalTitle" class="text-xl font-bold text-white mb-4">Input Order Baru</h3>
+      const formattedDate = formatDateIndo(data.orderDate);
+      const suggestedName = `IJS ${data.type} ${data.name} ${data.item} ${formattedDate}`;
       
-      <form id="orderForm" onsubmit="submitForm(event)" class="space-y-4">
-        <input type="hidden" id="editOrderId">
-        
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">TIPE ENQUIRY</label>
-          <select id="type" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
-            <option value="Buy">Buy (Order Langsung)</option>
-            <option value="Ask">Ask (Tanya-tanya / Lead)</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">NAMA CLIENT</label>
-          <input type="text" id="clientName" required placeholder="Contoh: Kiera" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">NOMOR WHATSAPP</label>
-          <input type="text" id="phone" required placeholder="Contoh: 081234567890" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">ITEM / JASA YANG DIORDER</label>
-          <input type="text" id="item" required placeholder="Contoh: Logo" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">HARGA (RP)</label>
-          <input type="number" id="price" required placeholder="150000" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">TANGGAL ORDER</label>
-            <input type="date" id="orderDate" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 [color-scheme:dark]">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">DEADLINE</label>
-            <input type="date" id="deadline" required class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500 [color-scheme:dark]">
-          </div>
-        </div>
-
-        <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold p-3 rounded-xl mt-2 transition shadow-lg">
-          Simpan Data & Copy Rename WA
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxJ0qOZNoYGq99cRSnrhvki8OHxLwNhgQvIWhU1TwzSLpTx3xWjC8YcuYtsjTjtLg4/exec";
-    const PASS_KEY = "ikmalsayang";
-    let globalOrders = [];
-
-    // System Password
-    function checkPassword(e) {
-      if(e) e.preventDefault();
-      const input = document.getElementById('passInput').value;
-      if (input === PASS_KEY) {
-        localStorage.setItem('ijs_auth', 'true');
-        document.getElementById('loginModal').classList.add('hidden');
-        document.getElementById('appDashboard').classList.remove('hidden');
-        loadData();
-      } else {
-        alert("🔒 Password salah!");
+      const contactSheet = ss.getSheetByName("Contacts");
+      if (contactSheet) {
+        contactSheet.appendRow([cleanPhone, data.name, formattedDate, suggestedName]);
       }
-    }
-
-    function autoLogin() {
-      if (localStorage.getItem('ijs_auth') === 'true') {
-        document.getElementById('loginModal').classList.add('hidden');
-        document.getElementById('appDashboard').classList.remove('hidden');
-        loadData();
-      }
-    }
-    autoLogin();
-
-    function logout() {
-      localStorage.removeItem('ijs_auth');
-      location.reload();
-    }
-
-    document.getElementById('orderDate').valueAsDate = new Date();
-
-    function openModal(mode, orderId = null) {
-      document.getElementById('orderModal').classList.remove('hidden');
-      document.getElementById('orderModal').classList.add('flex');
       
-      if (mode === 'add') {
-        document.getElementById('modalTitle').innerText = "Input Order Baru";
-        document.getElementById('editOrderId').value = "";
-        document.getElementById('orderForm').reset();
-        document.getElementById('orderDate').valueAsDate = new Date();
-      } else if (mode === 'edit') {
-        document.getElementById('modalTitle').innerText = "Edit Data Transaksi";
-        const ord = globalOrders.find(o => o.id === orderId);
-        if (ord) {
-          document.getElementById('editOrderId').value = ord.id;
-          document.getElementById('type').value = ord.type;
-          document.getElementById('clientName').value = ord.name;
-          document.getElementById('phone').value = ord.phone;
-          document.getElementById('item').value = ord.item;
-          document.getElementById('price').value = ord.price;
-          document.getElementById('orderDate').value = ord.orderDate;
-          document.getElementById('deadline').value = ord.deadline;
+      return responseJSON({ status: "success", suggestedName: suggestedName, orderId: orderId });
+    }
+    
+    // 2. UPDATE STATUS
+    if (data.action === "update_status") {
+      const values = sheet.getDataRange().getValues();
+      for (let i = 1; i < values.length; i++) {
+        if (values[i][0] === data.orderId) {
+          sheet.getRange(i + 1, 8).setValue(data.newStatus);
+          return responseJSON({ status: "success" });
         }
       }
+      return responseJSON({ status: "error", message: "ID tidak ditemukan" });
     }
 
-    function closeModal() {
-      document.getElementById('orderModal').classList.add('hidden');
-      document.getElementById('orderModal').classList.remove('flex');
-    }
+    // 3. EDIT ORDER
+    if (data.action === "edit_order") {
+      const values = sheet.getDataRange().getValues();
+      const cleanPhone = normalizePhone(data.phone);
 
-    // READ & RENDER DATA
-    async function loadData() {
-      try {
-        const res = await fetch(GAS_URL);
-        const result = await res.json();
-        
-        if (result.status === "success") {
-          globalOrders = result.data || [];
-          renderTableAndStats();
+      for (let i = 1; i < values.length; i++) {
+        if (values[i][0] === data.orderId) {
+          sheet.getRange(i + 1, 2).setValue(cleanPhone);
+          sheet.getRange(i + 1, 3).setValue(data.name);
+          sheet.getRange(i + 1, 4).setValue(data.item);
+          sheet.getRange(i + 1, 5).setValue(Number(data.price));
+          sheet.getRange(i + 1, 6).setValue(data.orderDate);
+          sheet.getRange(i + 1, 7).setValue(data.deadline);
+          sheet.getRange(i + 1, 9).setValue(data.type);
+          
+          return responseJSON({ status: "success" });
         }
-      } catch (err) {
-        console.error(err);
       }
+      return responseJSON({ status: "error", message: "ID tidak ditemukan" });
     }
 
-    function renderTableAndStats() {
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
-      
-      let monthCount = 0;
-      let monthRevenue = 0;
-      let buyCount = 0;
-      let askCount = 0;
-      let pendingCount = 0;
-      let doneCount = 0;
-
-      const tbody = document.getElementById('order-rows');
-      tbody.innerHTML = '';
-
-      if (globalOrders.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-500">Belum ada data transaksi.</td></tr>`;
-        return;
-      }
-
-      // Reversal klon array agar tidak merusak urutan asli
-      [...globalOrders].reverse().forEach(ord => {
-        const ordDate = new Date(ord.orderDate);
-        
-        if (ordDate.getMonth() === currentMonth && ordDate.getFullYear() === currentYear) {
-          monthCount++;
-          if(ord.type === "Buy") monthRevenue += Number(ord.price || 0);
+    // 4. DELETE ORDER
+    if (data.action === "delete_order") {
+      const values = sheet.getDataRange().getValues();
+      for (let i = 1; i < values.length; i++) {
+        if (values[i][0] === data.orderId) {
+          sheet.deleteRow(i + 1);
+          return responseJSON({ status: "success" });
         }
-
-        if (ord.type === "Buy") buyCount++;
-        if (ord.type === "Ask") askCount++;
-        if (ord.status === "Pending") pendingCount++;
-        if (ord.status === "Selesai") doneCount++;
-
-        const statusClass = ord.status === "Selesai" 
-          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
-          : "bg-amber-500/10 text-amber-400 border-amber-500/20";
-
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-700/20 transition border-b border-slate-700/40">
-            <td class="p-4 font-semibold text-white">${ord.name}</td>
-            <td class="p-4 text-slate-400 font-mono text-xs">
-              ${ord.phone} 
-              ${ord.phone !== '-' ? `<a href="https://wa.me/${ord.phone}" target="_blank" class="text-emerald-400 hover:text-emerald-300 ml-1.5"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
-            </td>
-            <td class="p-4">${ord.item}</td>
-            <td class="p-4 text-emerald-400 font-medium">Rp ${Number(ord.price).toLocaleString('id-ID')}</td>
-            <td class="p-4 text-amber-400 font-medium">${ord.deadline}</td>
-            <td class="p-4"><span class="text-xs px-2 py-0.5 rounded ${ord.type === 'Buy' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-700 text-slate-300'}">${ord.type}</span></td>
-            <td class="p-4">
-              <span class="px-2.5 py-1 rounded-lg text-xs border font-medium ${statusClass}">
-                ${ord.status}
-              </span>
-            </td>
-            <td class="p-4 text-center">
-              <div class="flex items-center justify-center gap-1.5">
-                <button onclick="toggleStatus('${ord.id}')" title="Ubah Status" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1.5 rounded-lg text-xs transition">
-                  <i class="fa-solid fa-sync"></i>
-                </button>
-                <button onclick="openModal('edit', '${ord.id}')" title="Edit Data" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-2.5 py-1.5 rounded-lg text-xs border border-blue-500/30 transition">
-                  <i class="fa-solid fa-pen"></i>
-                </button>
-                <button onclick="deleteOrder('${ord.id}')" title="Hapus Data" class="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-2.5 py-1.5 rounded-lg text-xs border border-red-500/30 transition">
-                  <i class="fa-solid fa-trash"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-      });
-
-      document.getElementById('total-revenue').innerText = `Rp ${monthRevenue.toLocaleString('id-ID')}`;
-      document.getElementById('month-orders').innerText = monthCount;
-      document.getElementById('total-cust').innerText = globalOrders.length;
-      document.getElementById('total-buy').innerText = buyCount;
-      document.getElementById('total-ask').innerText = askCount;
-      document.getElementById('total-pending').innerText = pendingCount;
-      document.getElementById('total-done').innerText = doneCount;
-    }
-
-    // INSTANT OPTIMISTIC UPDATE STATUS
-    function toggleStatus(orderId) {
-      const ord = globalOrders.find(o => o.id === orderId);
-      if(!ord) return;
-      
-      const newStatus = ord.status === "Pending" ? "Selesai" : "Pending";
-      ord.status = newStatus; // Update lokal secara instan
-      renderTableAndStats();
-
-      // Kirim background request ke GAS
-      fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({ action: "update_status", orderId: orderId, newStatus: newStatus })
-      });
-    }
-
-    // INSTANT DELETE ORDER
-    function deleteOrder(orderId) {
-      if (!confirm("⚠️ Yakin ingin menghapus data order ini?")) return;
-
-      globalOrders = globalOrders.filter(o => o.id !== orderId); // Hapus lokal instan
-      renderTableAndStats();
-
-      // Kirim background request ke GAS
-      fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({ action: "delete_order", orderId: orderId })
-      });
-    }
-
-    // SUBMIT FORM (CREATE / EDIT)
-    async function submitForm(e) {
-      e.preventDefault();
-      const btn = document.getElementById('submitBtn');
-      btn.innerText = "Menyimpan...";
-      btn.disabled = true;
-
-      const editId = document.getElementById('editOrderId').value;
-      const type = document.getElementById('type').value;
-      const name = document.getElementById('clientName').value;
-      const phone = document.getElementById('phone').value;
-      const item = document.getElementById('item').value;
-      const price = document.getElementById('price').value;
-      const orderDateVal = document.getElementById('orderDate').value;
-      const deadlineVal = document.getElementById('deadline').value;
-
-      const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-      const d = new Date(orderDateVal);
-      const formattedDate = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-      const suggestedName = `IJS ${type} ${name} ${item} ${formattedDate}`;
-
-      const actionType = editId ? "edit_order" : "add_order";
-
-      const payload = {
-        action: actionType,
-        orderId: editId,
-        type: type,
-        name: name,
-        phone: phone,
-        item: item,
-        price: price,
-        orderDate: orderDateVal,
-        deadline: deadlineVal
-      };
-
-      try {
-        await fetch(GAS_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(payload)
-        });
-
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          try { await navigator.clipboard.writeText(suggestedName); } catch (cErr) {}
-        }
-
-        alert(`✅ Data Berhasil Disimpan!\n\nSaran Nama Kontak WA:\n${suggestedName}\n\n(Telah tersalin otomatis ke clipboard!)`);
-        
-        closeModal();
-        setTimeout(loadData, 1000);
-
-      } catch (err) {
-        alert("❌ Gagal menyimpan data.");
-      } finally {
-        btn.innerText = "Simpan Data & Copy Rename WA";
-        btn.disabled = false;
       }
+      return responseJSON({ status: "error", message: "ID tidak ditemukan" });
     }
-  </script>
-</body>
-</html>
+
+  } catch (err) {
+    return responseJSON({ status: "error", message: err.toString() });
+  }
+}
+
+function doGet(e) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName("Orders");
+  
+  if (!sheet) {
+    return responseJSON({ status: "success", data: [] });
+  }
+  
+  const data = sheet.getDataRange().getValues();
+  data.shift();
+  
+  const orders = data.map(row => ({
+    id: row[0],
+    phone: normalizePhone(row[1]),
+    name: row[2],
+    item: row[3],
+    price: row[4],
+    orderDate: row[5] ? Utilities.formatDate(new Date(row[5]), "GMT+7", "yyyy-MM-dd") : "",
+    deadline: row[6] ? Utilities.formatDate(new Date(row[6]), "GMT+7", "yyyy-MM-dd") : "",
+    status: row[7] || "Pending",
+    type: row[8] || "Buy"
+  }));
+  
+  return responseJSON({ status: "success", data: orders });
+}
+
+function responseJSON(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
