@@ -6,6 +6,17 @@
   <title>IJS Joki - Executive Control Panel</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @media print {
+      body { background-color: #fff !important; color: #000 !important; }
+      #loginModal, #orderModal, .no-print { display: none !important; }
+      #appDashboard { display: block !important; max-width: 100% !important; padding: 0 !important; }
+      .bg-slate-800\/80, .bg-slate-900\/80, .bg-slate-800 { background: #fff !important; border: 1px solid #ccc !important; color: #000 !important; shadow: none !important; }
+      text-white, text-slate-300, text-slate-200, text-slate-400 { color: #000 !important; }
+      table { width: 100% !important; border-collapse: collapse !important; }
+      th, td { border: 1px solid #ddd !important; padding: 8px !important; color: #000 !important; }
+    }
+  </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased pb-12">
 
@@ -36,10 +47,13 @@
           <span class="bg-indigo-500/20 text-indigo-400 text-xs font-bold px-2.5 py-1 rounded-md border border-indigo-500/30">PRO PANEL</span>
           <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">IJS Joki Management</h1>
         </div>
-        <p class="text-slate-400 text-sm mt-1">Overview performa bisnis, tracking leads, orderan, dan kalender deadline.</p>
+        <p class="text-slate-400 text-sm mt-1">Overview performa bisnis, tracking leads, orderan, dan status pembayaran.</p>
       </div>
-      <div class="flex items-center gap-3">
-        <button onclick="openModal('add')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-5 py-2.5 rounded-xl shadow-lg transition flex items-center gap-2 text-sm">
+      <div class="flex items-center gap-3 no-print">
+        <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg transition flex items-center gap-2 text-sm">
+          <i class="fa-solid fa-file-pdf"></i> Cetak / PDF Laporan
+        </button>
+        <button onclick="openModal('add')" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2.5 rounded-xl shadow-lg transition flex items-center gap-2 text-sm">
           <i class="fa-solid fa-plus"></i> Input Order Baru
         </button>
         <button onclick="logout()" title="Keluar" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white p-2.5 rounded-xl border border-slate-700 transition">
@@ -90,9 +104,7 @@
     </div>
 
     <!-- WIDGET KALENDER & SIDEBAR DEADLINE -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-      
-      <!-- Kalender Bulanan -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 no-print">
       <div class="lg:col-span-2 bg-slate-800/80 border border-slate-700/60 rounded-2xl p-5 shadow-xl">
         <div class="flex items-center justify-between mb-4">
           <h2 class="font-bold text-slate-200 text-lg flex items-center gap-2">
@@ -127,7 +139,6 @@
         </div>
       </div>
 
-      <!-- Sidebar Informasi Deadline -->
       <div class="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
         <div>
           <div class="flex items-center justify-between mb-3 border-b border-slate-700/60 pb-3">
@@ -142,7 +153,6 @@
           </div>
         </div>
       </div>
-
     </div>
 
     <!-- TABLE ORDERS WITH TAB FILTER -->
@@ -152,8 +162,7 @@
           <i class="fa-solid fa-list-check text-indigo-400"></i> Daftar Transaksi
         </h2>
         
-        <!-- Filter Tabs (Pending / Done / All) -->
-        <div class="flex items-center bg-slate-900/80 p-1 rounded-xl border border-slate-700/60 text-xs font-semibold">
+        <div class="flex items-center bg-slate-900/80 p-1 rounded-xl border border-slate-700/60 text-xs font-semibold no-print">
           <button onclick="setTabFilter('Pending')" id="tabPending" class="px-3.5 py-1.5 rounded-lg transition text-amber-400 bg-slate-800 border border-slate-700">
             ⏳ Pending (<span id="countTabPending">0</span>)
           </button>
@@ -173,11 +182,11 @@
               <th class="p-4">Customer</th>
               <th class="p-4">No. WhatsApp</th>
               <th class="p-4">Item Jasa</th>
-              <th class="p-4">Harga</th>
+              <th class="p-4">Harga / DP</th>
+              <th class="p-4">Status Bayar</th>
               <th class="p-4">Deadline</th>
-              <th class="p-4">Type</th>
-              <th class="p-4">Status</th>
-              <th class="p-4 text-center">Aksi</th>
+              <th class="p-4">Pekerjaan</th>
+              <th class="p-4 text-center no-print">Aksi Status & CRUD</th>
             </tr>
           </thead>
           <tbody id="order-rows" class="divide-y divide-slate-700/40 text-slate-300">
@@ -192,7 +201,7 @@
 
   <!-- MODAL FORM INPUT & EDIT -->
   <div id="orderModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
       <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
         <i class="fa-solid fa-xmark text-xl"></i>
       </button>
@@ -226,8 +235,22 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">HARGA (RP)</label>
-          <input type="number" id="price" required placeholder="150000" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
+          <label class="block text-xs font-semibold text-slate-400 mb-1">SKEMA PEMBAYARAN</label>
+          <select id="paymentMode" onchange="handlePaymentModeChange()" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
+            <option value="Lunas">Lunas di Awal</option>
+            <option value="Tempo">Bayar Tempo / DP</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">HARGA FULL (RP)</label>
+            <input type="number" id="price" required placeholder="150000" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
+          </div>
+          <div id="dpContainer" class="hidden">
+            <label class="block text-xs font-semibold text-slate-400 mb-1">NOMINAL DP (RP)</label>
+            <input type="number" id="dpAmount" placeholder="50000" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-indigo-500">
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -255,7 +278,6 @@
     let activeTab = "Pending";
     let currentCalendarDate = new Date();
 
-    // Login System
     function checkPassword(e) {
       if(e) e.preventDefault();
       const input = document.getElementById('passInput').value;
@@ -292,11 +314,21 @@
       return cleaned;
     }
 
+    function handlePaymentModeChange() {
+      const mode = document.getElementById('paymentMode').value;
+      const dpContainer = document.getElementById('dpContainer');
+      if (mode === 'Tempo') {
+        dpContainer.classList.remove('hidden');
+      } else {
+        dpContainer.classList.add('hidden');
+        document.getElementById('dpAmount').value = "";
+      }
+    }
+
     document.getElementById('orderDate').valueAsDate = new Date();
 
     function setTabFilter(tab) {
       activeTab = tab;
-      
       const tabPending = document.getElementById('tabPending');
       const tabDone = document.getElementById('tabDone');
       const tabAll = document.getElementById('tabAll');
@@ -325,6 +357,7 @@
         document.getElementById('editOrderId').value = "";
         document.getElementById('orderForm').reset();
         document.getElementById('orderDate').valueAsDate = new Date();
+        handlePaymentModeChange();
       } else if (mode === 'edit') {
         document.getElementById('modalTitle').innerText = "Edit Data Transaksi";
         const ord = globalOrders.find(o => o.id === orderId);
@@ -335,8 +368,11 @@
           document.getElementById('phone').value = ord.phone;
           document.getElementById('item').value = ord.item;
           document.getElementById('price').value = ord.price;
+          document.getElementById('paymentMode').value = ord.paymentMode || 'Lunas';
+          document.getElementById('dpAmount').value = ord.dpAmount || '';
           document.getElementById('orderDate').value = ord.orderDate;
           document.getElementById('deadline').value = ord.deadline;
+          handlePaymentModeChange();
         }
       }
     }
@@ -382,7 +418,6 @@
         if (ord.type === "Buy") buyCount++;
         if (ord.type === "Ask") askCount++;
         
-        // Cek status fleksibel (case-insensitive)
         const st = (ord.status || '').toLowerCase();
         if (st === 'selesai' || st === 'done') {
           doneCount++;
@@ -395,7 +430,6 @@
       document.getElementById('countTabDone').innerText = doneCount;
       document.getElementById('countTabAll').innerText = globalOrders.length;
 
-      // Filter Data Berdasarkan Tab Aktif
       let filteredOrders = [...globalOrders];
       if (activeTab === 'Pending') {
         filteredOrders = globalOrders.filter(o => (o.status || '').toLowerCase() !== 'selesai' && (o.status || '').toLowerCase() !== 'done');
@@ -411,35 +445,48 @@
       } else {
         filteredOrders.reverse().forEach(ord => {
           const formattedPhone = cleanPhoneFormat(ord.phone);
-          const isDone = (ord.status || '').toLowerCase() === 'selesai' || (ord.status || '').toLowerCase() === 'done';
+          const isWorkDone = (ord.status || '').toLowerCase() === 'selesai' || (ord.status || '').toLowerCase() === 'done';
+          const isPaidLunas = (ord.payStatus || '').toLowerCase() === 'lunas' || ord.paymentMode === 'Lunas';
           
-          const statusBadge = isDone 
+          const workBadge = isWorkDone 
             ? `<span class="px-2.5 py-1 rounded-lg text-xs border font-medium bg-emerald-500/10 text-emerald-400 border-emerald-500/20">Selesai</span>` 
             : `<span class="px-2.5 py-1 rounded-lg text-xs border font-medium bg-amber-500/10 text-amber-400 border-amber-500/20">Pending</span>`;
 
-          const toggleBtn = isDone
-            ? `<button onclick="toggleStatus('${ord.id}', 'Pending')" title="Kembalikan ke Pending" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 px-2.5 py-1.5 rounded-lg text-xs border border-amber-500/30 transition flex items-center gap-1"><i class="fa-solid fa-rotate-left"></i> Set Pending</button>`
-            : `<button onclick="toggleStatus('${ord.id}', 'Selesai')" title="Tandai Pekerjaan Selesai" class="bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 px-2.5 py-1.5 rounded-lg text-xs border border-emerald-500/30 transition flex items-center gap-1"><i class="fa-solid fa-check"></i> Set Selesai</button>`;
+          const payBadge = isPaidLunas
+            ? `<span class="px-2 py-0.5 rounded text-xs bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">Lunas</span>`
+            : `<span class="px-2 py-0.5 rounded text-xs bg-red-500/20 text-red-300 font-semibold border border-red-500/30">${ord.payStatus}</span>`;
+
+          const toggleWorkBtn = isWorkDone
+            ? `<button onclick="toggleStatus('${ord.id}', 'Pending')" title="Kembalikan Pekerjaan ke Pending" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 px-2 py-1 rounded-lg text-xs border border-amber-500/30 transition flex items-center gap-1"><i class="fa-solid fa-rotate-left"></i> Job Pending</button>`
+            : `<button onclick="toggleStatus('${ord.id}', 'Selesai')" title="Tandai Pekerjaan Selesai" class="bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 px-2 py-1 rounded-lg text-xs border border-emerald-500/30 transition flex items-center gap-1"><i class="fa-solid fa-check"></i> Job Selesai</button>`;
+
+          const togglePayBtn = !isPaidLunas
+            ? `<button onclick="markAsLunas('${ord.id}')" title="Tandai Sudah Lunas" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 px-2 py-1 rounded-lg text-xs border border-blue-500/30 transition flex items-center gap-1"><i class="fa-solid fa-money-bill-wave"></i> Set Lunas</button>`
+            : ``;
 
           tbody.innerHTML += `
             <tr class="hover:bg-slate-700/20 transition border-b border-slate-700/40">
               <td class="p-4 font-semibold text-white">${ord.name}</td>
               <td class="p-4 text-slate-400 font-mono text-xs">
                 ${formattedPhone} 
-                ${formattedPhone !== '-' ? `<a href="https://wa.me/${formattedPhone}" target="_blank" class="text-emerald-400 hover:text-emerald-300 ml-1.5"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
+                ${formattedPhone !== '-' ? `<a href="https://wa.me/${formattedPhone}" target="_blank" class="text-emerald-400 hover:text-emerald-300 ml-1.5 no-print"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
               </td>
               <td class="p-4">${ord.item}</td>
-              <td class="p-4 text-emerald-400 font-medium">Rp ${Number(ord.price).toLocaleString('id-ID')}</td>
+              <td class="p-4">
+                <span class="text-emerald-400 font-medium block">Rp ${Number(ord.price).toLocaleString('id-ID')}</span>
+                ${ord.dpAmount ? `<span class="text-xs text-slate-400">DP: Rp ${Number(ord.dpAmount).toLocaleString('id-ID')}</span>` : ''}
+              </td>
+              <td class="p-4">${payBadge}</td>
               <td class="p-4 text-amber-400 font-medium">${ord.deadline}</td>
-              <td class="p-4"><span class="text-xs px-2 py-0.5 rounded ${ord.type === 'Buy' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-700 text-slate-300'}">${ord.type}</span></td>
-              <td class="p-4">${statusBadge}</td>
-              <td class="p-4 text-center">
-                <div class="flex items-center justify-center gap-1.5">
-                  ${toggleBtn}
-                  <button onclick="openModal('edit', '${ord.id}')" title="Edit Data" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-2.5 py-1.5 rounded-lg text-xs border border-blue-500/30 transition">
+              <td class="p-4">${workBadge}</td>
+              <td class="p-4 text-center no-print">
+                <div class="flex items-center justify-center gap-1">
+                  ${toggleWorkBtn}
+                  ${togglePayBtn}
+                  <button onclick="openModal('edit', '${ord.id}')" title="Edit Data" class="bg-slate-700 hover:bg-slate-600 text-blue-400 px-2 py-1 rounded-lg text-xs transition">
                     <i class="fa-solid fa-pen"></i>
                   </button>
-                  <button onclick="deleteOrder('${ord.id}')" title="Hapus Data" class="bg-red-600/20 hover:bg-red-600/40 text-red-400 px-2.5 py-1.5 rounded-lg text-xs border border-red-500/30 transition">
+                  <button onclick="deleteOrder('${ord.id}')" title="Hapus Data" class="bg-slate-700 hover:bg-slate-600 text-red-400 px-2 py-1 rounded-lg text-xs transition">
                     <i class="fa-solid fa-trash"></i>
                   </button>
                 </div>
@@ -458,21 +505,18 @@
       document.getElementById('total-done').innerText = doneCount;
     }
 
-    // --- KALENDER DEADLINE & SIDEBAR ---
+    // --- KALENDER DEADLINE ---
     function renderCalendar() {
       const year = currentCalendarDate.getFullYear();
       const month = currentCalendarDate.getMonth();
-      
       const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
       document.getElementById('calendarMonthTitle').innerText = `${monthNames[month]} ${year}`;
 
       const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
-      
       const today = new Date();
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-      // Kumpulkan deadline pending
       const pendingDeadlines = globalOrders
         .filter(o => (o.status || '').toLowerCase() !== 'selesai' && (o.status || '').toLowerCase() !== 'done' && o.deadline)
         .map(o => o.deadline);
@@ -549,16 +593,15 @@
       });
     }
 
-    // INSTANT OPTIMISTIC UPDATE STATUS (PENDING <-> SELESAI)
+    // UPDATE PEKERJAAN
     function toggleStatus(orderId, targetStatus) {
       const ord = globalOrders.find(o => o.id === orderId);
       if(!ord) return;
       
-      ord.status = targetStatus; // Update status di memori lokal secara instan
+      ord.status = targetStatus;
       renderTableAndStats();
       renderCalendar();
 
-      // Kirim perubahan di latar belakang ke Google Sheets
       fetch(GAS_URL, {
         method: "POST",
         mode: "no-cors",
@@ -567,7 +610,25 @@
       });
     }
 
-    // INSTANT DELETE ORDER
+    // UPDATE PELUNASAN PEMBAYARAN
+    function markAsLunas(orderId) {
+      const ord = globalOrders.find(o => o.id === orderId);
+      if(!ord) return;
+      if(!confirm("Set pembayaran order ini menjadi LUNAS?")) return;
+
+      ord.paymentMode = "Lunas";
+      ord.payStatus = "Lunas";
+      renderTableAndStats();
+
+      fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ action: "update_payment", orderId: orderId })
+      });
+    }
+
+    // DELETE ORDER
     function deleteOrder(orderId) {
       if (!confirm("⚠️ Yakin ingin menghapus data order ini?")) return;
 
@@ -596,6 +657,8 @@
       const phone = document.getElementById('phone').value;
       const item = document.getElementById('item').value;
       const price = document.getElementById('price').value;
+      const paymentMode = document.getElementById('paymentMode').value;
+      const dpAmount = document.getElementById('dpAmount').value;
       const orderDateVal = document.getElementById('orderDate').value;
       const deadlineVal = document.getElementById('deadline').value;
 
@@ -614,6 +677,8 @@
         phone: phone,
         item: item,
         price: price,
+        paymentMode: paymentMode,
+        dpAmount: dpAmount,
         orderDate: orderDateVal,
         deadline: deadlineVal
       };
