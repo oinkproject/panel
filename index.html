@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark light">
+<meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0e151d">
 <link rel="icon" href="data:,">
 <title>IJS Joki</title>
@@ -12,13 +12,6 @@
   --bg:#0e151d;--surface:#151f2a;--surface2:#1b2733;--line:#263544;
   --text:#e6edf3;--muted:#8a9bad;--money:#4cd1a0;--warn:#f0b94d;--danger:#ff7b6e;
   --primary:#6ea8ff;--on-primary:#08121f;color-scheme:dark;
-}
-@media (prefers-color-scheme:light){
-  :root{
-    --bg:#f3f5f8;--surface:#fff;--surface2:#eef2f6;--line:#dbe2ea;
-    --text:#16202a;--muted:#5d6e80;--money:#0b8a62;--warn:#9a6200;--danger:#c23a2d;
-    --primary:#1d5fd0;--on-primary:#fff;color-scheme:light;
-  }
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -29,7 +22,6 @@ a{color:inherit}
 .hidden{display:none!important}
 .muted{color:var(--muted)}
 :focus-visible{outline:2px solid var(--primary);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* Tombol */
 .btn{border:1px solid var(--line);background:var(--surface2);padding:8px 14px;border-radius:10px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1.2;transition:filter .15s}
@@ -142,11 +134,11 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 #toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:.2s;max-width:calc(100% - 32px);z-index:99;text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 
-/* Cetak: hanya teks laporan */
+/* Cetak */
 #printArea{display:none}
 @media print{
   body>*:not(#printArea){display:none!important}
-  body{background:#fff}
+  body{background:#fff;color:#000}
   #printArea{display:block;white-space:pre-wrap;font:12pt/1.55 ui-monospace,Menlo,Consolas,monospace;color:#000;background:#fff}
   @page{margin:18mm}
 }
@@ -304,7 +296,7 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp
 const rp = n => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const today = () => ymd(new Date());
-const parts = s => s.split('-').map(Number);
+const parts = s => String(s || '').split('-').map(Number);
 const fmtD = s => { if (!s) return '-'; const [y, m, d] = parts(s); return `${d} ${MON[m - 1]} ${y}`; };
 const fmtLong = s => { const [y, m, d] = parts(s); return `${d} ${MONTHS[m - 1]} ${y}`; };
 const dayDiff = (a, b) => { const x = parts(a), y = parts(b); return Math.round((Date.UTC(y[0], y[1] - 1, y[2]) - Date.UTC(x[0], x[1] - 1, x[2])) / 864e5); };
@@ -347,19 +339,27 @@ function ask(msg, okText, danger) {
 }
 
 /* ---------- Model ---------- */
-const isDone = o => /^(selesai|done)$/i.test(o.status || '');
-const isLunas = o => /^lunas$/i.test(o.payStatus || '') || o.paymentMode === 'Lunas';
+const isDone = o => /^(selesai|done)$/i.test(String(o.status || '').trim());
+const isLunas = o => /^lunas$/i.test(String(o.payStatus || '').trim()) || String(o.paymentMode || '').trim() === 'Lunas';
 const paidOf = o => {
-  if (isLunas(o)) return o.price;
+  const price = Number(o.price) || 0;
+  if (isLunas(o)) return price;
   const dp = Number(o.dpAmount) || 0;
-  return dp > 0 ? Math.min(dp, o.price) : 0;
+  return dp > 0 ? Math.min(dp, price) : 0;
 };
-const dueOf = o => Math.max(0, o.price - paidOf(o));
+const dueOf = o => Math.max(0, (Number(o.price) || 0) - paidOf(o));
 const normalize = o => ({
-  id: String(o.id), phone: cleanPhone(o.phone), name: o.name || '', item: o.item || '',
-  price: Number(o.price) || 0, orderDate: o.orderDate || '', deadline: o.deadline || '',
-  status: o.status || 'Pending', paymentMode: o.paymentMode || 'Lunas',
-  dpAmount: Number(o.dpAmount) || 0, payStatus: o.payStatus || 'Lunas'
+  id: String(o.id),
+  phone: cleanPhone(o.phone),
+  name: String(o.name || ''),
+  item: String(o.item || ''),
+  price: Number(o.price) || 0,
+  orderDate: String(o.orderDate || ''),
+  deadline: String(o.deadline || ''),
+  status: String(o.status || 'Pending'),
+  paymentMode: String(o.paymentMode || 'Lunas'),
+  dpAmount: Number(o.dpAmount) || 0,
+  payStatus: String(o.payStatus || 'Lunas')
 });
 
 /* ---------- State ---------- */
@@ -438,7 +438,11 @@ function renderStats() {
   const pre = `${stat.y}-${pad(stat.m + 1)}`;
   let received = 0, total = 0, count = 0, pending = 0, due = 0;
   orders.forEach(o => {
-    if ((o.orderDate || '').startsWith(pre)) { received += paidOf(o); total += o.price; count++; }
+    if ((o.orderDate || '').startsWith(pre)) {
+      received += paidOf(o);
+      total += Number(o.price) || 0;
+      count++;
+    }
     if (!isDone(o)) pending++;
     due += dueOf(o);
   });
@@ -497,9 +501,9 @@ function cardHTML(o) {
 }
 
 function renderList() {
-  const done = orders.filter(isDone).length;
-  $('cPending').textContent = orders.length - done;
-  $('cDone').textContent = done;
+  const doneCount = orders.filter(isDone).length;
+  $('cPending').textContent = orders.length - doneCount;
+  $('cDone').textContent = doneCount;
   $('cAll').textContent = orders.length;
 
   const l = visibleOrders();
@@ -548,7 +552,7 @@ function renderSide() {
     : `<p class="empty" style="padding:14px 0">${selDate ? 'Tidak ada deadline di tanggal ini.' : 'Tidak ada pekerjaan yang menunggu.'}</p>`;
 }
 
-/* ---------- Event: daftar & kalender ---------- */
+/* ---------- Event ---------- */
 $('list').addEventListener('click', async e => {
   const btn = e.target.closest('[data-act]');
   if (!btn) return;
@@ -668,14 +672,14 @@ $('orderForm').addEventListener('submit', async e => {
   }
 });
 
-/* ---------- Laporan pendapatan (teks sederhana) ---------- */
+/* ---------- Laporan ---------- */
 function buildReport(ym) {
   const [y, m] = ym.split('-').map(Number);
   const list = orders.filter(o => (o.orderDate || '').startsWith(ym))
     .sort((a, b) => a.orderDate.localeCompare(b.orderDate));
   let received = 0, total = 0, fromLunas = 0, fromDp = 0;
   list.forEach(o => {
-    const p = paidOf(o); received += p; total += o.price;
+    const p = paidOf(o); received += p; total += Number(o.price) || 0;
     if (isLunas(o)) fromLunas += p; else fromDp += p;
   });
   const L = [];
@@ -696,7 +700,7 @@ function buildReport(ym) {
 
 function updateReport() {
   const ym = $('repMonth').value;
-  $('reportText').textContent = /^\d{4}-\d{2}$/.test(ym) ? buildReport(ym) : 'Pilih bulan dengan format 2026-10.';
+  $('reportText').textContent = /^\d{4}-\d{2}$/.test(ym) ? buildReport(ym) : 'Pilih bulan.';
 }
 $('reportBtn').addEventListener('click', () => {$('repMonth').value = `${stat.y}-${pad(stat.m + 1)}`;
   updateReport();
@@ -704,7 +708,7 @@ $('reportBtn').addEventListener('click', () => {$('repMonth').value = `${stat.y}
 });
 $('repMonth').addEventListener('input', updateReport);$('copyReport').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText($('reportText').textContent); toast('Laporan tersalin.'); }
-  catch (_) { toast('Tidak bisa menyalin. Salin manual dari kotak laporan.'); }
+  catch (_) { toast('Tidak bisa menyalin.'); }
 });
 $('printReport').addEventListener('click', () => {
   $('printArea').textContent =$('reportText').textContent;
